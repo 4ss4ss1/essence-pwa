@@ -5,16 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Suivi Essence</title>
   
-  <!-- PWA : Manifest -->
   <link rel="manifest" href="manifest.json">
   
-  <!-- iOS : mode plein écran -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Essence">
   <link rel="apple-touch-icon" href="icon-192.png">
-  
-  <!-- Thème couleur -->
   <meta name="theme-color" content="#0f172a">
   
   <style>
@@ -29,12 +25,7 @@
       overscroll-behavior: none;
     }
     .container { max-width: 500px; margin: 0 auto; }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.6rem;
-      color: #0f172a;
-    }
+    h1 { text-align: center; margin-bottom: 20px; font-size: 1.6rem; color: #0f172a; }
     .card {
       background: white;
       border-radius: 20px;
@@ -42,21 +33,9 @@
       margin-bottom: 20px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    label {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: #334155;
-    }
+    form { display: flex; flex-direction: column; gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    label { font-weight: 600; font-size: 0.9rem; color: #334155; }
     input {
       padding: 12px 14px;
       border: 1px solid #cbd5e1;
@@ -80,28 +59,14 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    button.primary {
-      background: #2563eb;
-      color: white;
-    }
+    button.primary { background: #2563eb; color: white; }
     button.primary:hover { background: #1d4ed8; }
-    button.secondary {
-      background: #e2e8f0;
-      color: #1e293b;
-    }
+    button.secondary { background: #e2e8f0; color: #1e293b; }
     button.secondary:hover { background: #cbd5e1; }
-    button.danger {
-      background: #fee2e2;
-      color: #b91c1c;
-    }
+    button.danger { background: #fee2e2; color: #b91c1c; }
     button.danger:hover { background: #fecaca; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-      margin-top: 4px;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 4px; }
     th {
       text-align: left;
       padding: 10px 4px;
@@ -109,10 +74,7 @@
       color: #64748b;
       font-weight: 600;
     }
-    td {
-      padding: 10px 4px;
-      border-bottom: 1px solid #f1f5f9;
-    }
+    td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; }
     .stats {
       display: flex;
       justify-content: space-between;
@@ -123,30 +85,14 @@
       border-radius: 16px;
       margin-bottom: 16px;
     }
-    .stat {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .stat-value {
-      font-size: 1.3rem;
-      font-weight: 700;
-    }
-    .stat-label {
-      font-size: 0.8rem;
-      color: #64748b;
-      text-align: center;
-    }
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 14px;
-      justify-content: center;
-    }
-    .waiting {
-      color: #94a3b8;
-      font-style: italic;
-    }
+    .stat { display: flex; flex-direction: column; align-items: center; }
+    .stat-value { font-size: 1.3rem; font-weight: 700; }
+    .stat-label { font-size: 0.8rem; color: #64748b; text-align: center; }
+    .actions { display: flex; gap: 12px; margin-top: 14px; justify-content: center; }
+    .waiting { color: #94a3b8; font-style: italic; }
+    .monthly-table { margin-top: 10px; }
+    .monthly-table th { font-size: 0.8rem; }
+    .monthly-table td { font-size: 0.85rem; }
   </style>
 </head>
 <body>
@@ -192,6 +138,11 @@
     </div>
   </div>
 
+  <div id="monthly-section" class="card" style="display: none;">
+    <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📊 Statistiques mensuelles</h2>
+    <div id="monthly-container"></div>
+  </div>
+
   <div class="card">
     <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📋 Historique</h2>
     <div id="table-container">
@@ -206,7 +157,7 @@
 
 <script>
   (function() {
-    const STORAGE_KEY = 'fuel_logs_v3';  // nouvelle clé pour éviter conflits
+    const STORAGE_KEY = 'fuel_logs_v4'; // nouvelle clé pour éviter conflits
     let logs = [];
 
     function loadLogs() {
@@ -220,18 +171,15 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
     }
 
-    // Calcule les consommations et stats : on ne considère que les pleins qui ont une valeur km > 0
-    function computeStats() {
+    // Stats globales
+    function computeGlobalStats() {
       if (logs.length === 0) return null;
-      let totalLitres = 0;
-      let totalPrix = 0;
-      let totalKm = 0;
+      let totalLitres = 0, totalPrix = 0, totalKm = 0;
       logs.forEach(e => {
         totalLitres += e.litres;
         totalPrix += e.prix;
         if (e.km && e.km > 0) totalKm += e.km;
       });
-      // Consommation moyenne = total litres / total km * 100 (sur les pleins qui ont des km)
       const avgConso = totalKm > 0 ? (totalLitres * 100) / totalKm : 0;
       return {
         avgConso: avgConso.toFixed(2),
@@ -240,36 +188,110 @@
       };
     }
 
-    // Rendu du tableau
+    // Stats mensuelles
+    function computeMonthlyStats() {
+      const months = {};
+      logs.forEach(entry => {
+        const date = entry.date; // format YYYY-MM-DD
+        const month = date.substring(0, 7); // YYYY-MM
+        if (!months[month]) {
+          months[month] = { totalLitres: 0, totalPrix: 0, totalKm: 0, litresForConso: 0 };
+        }
+        months[month].totalPrix += entry.prix;
+        // On ne prend en compte les km et les litres que si km est renseigné (conso connue)
+        if (entry.km && entry.km > 0) {
+          months[month].totalKm += entry.km;
+          months[month].litresForConso += entry.litres;
+        }
+        // On ajoute aussi les litres totaux pour information (utile pour d'autres calculs)
+        months[month].totalLitres += entry.litres;
+      });
+
+      // Transformer en tableau trié par mois décroissant
+      const monthlyArray = Object.keys(months).map(month => {
+        const m = months[month];
+        const conso = m.totalKm > 0 ? ((m.litresForConso * 100) / m.totalKm).toFixed(1) : null;
+        return {
+          month,
+          totalPrix: m.totalPrix.toFixed(2),
+          totalKm: m.totalKm.toFixed(1),
+          conso: conso
+        };
+      }).sort((a, b) => b.month.localeCompare(a.month)); // plus récent en premier
+
+      return monthlyArray;
+    }
+
+    // Affichage des stats mensuelles
+    function renderMonthlyStats() {
+      const container = document.getElementById('monthly-container');
+      const section = document.getElementById('monthly-section');
+      const monthlyData = computeMonthlyStats();
+
+      if (monthlyData.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+      let html = `<table class="monthly-table">
+        <thead>
+          <tr>
+            <th>Mois</th>
+            <th>Conso (L/100)</th>
+            <th>Dépense (€)</th>
+            <th>Km</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      monthlyData.forEach(item => {
+        const [year, monthNum] = item.month.split('-');
+        const date = new Date(year, monthNum - 1);
+        const monthName = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        const consoDisplay = item.conso ? item.conso : '<span class="waiting">—</span>';
+        html += `<tr>
+          <td>${monthName}</td>
+          <td>${consoDisplay}</td>
+          <td>${item.totalPrix}</td>
+          <td>${item.totalKm}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // Tableau des pleins
     function renderTable() {
-      const container = document.getElementById('table-container');
+      const tableContainer = document.getElementById('table-container');
       const statsSection = document.getElementById('stats-section');
       const actionBtns = document.getElementById('action-buttons');
 
       if (logs.length === 0) {
-        container.innerHTML = '<p style="color:#64748b; text-align:center;">Aucun plein pour le moment.</p>';
+        tableContainer.innerHTML = '<p style="color:#64748b; text-align:center;">Aucun plein pour le moment.</p>';
         statsSection.style.display = 'none';
+        document.getElementById('monthly-section').style.display = 'none';
         actionBtns.style.display = 'none';
         return;
       }
 
       actionBtns.style.display = 'flex';
       statsSection.style.display = 'block';
-      const stats = computeStats();
-      if (stats) {
-        document.getElementById('avg-consumption').textContent = stats.avgConso;
-        document.getElementById('total-spent').textContent = stats.totalSpent + ' €';
-        document.getElementById('total-km').textContent = stats.totalKm + ' km';
+
+      const global = computeGlobalStats();
+      if (global) {
+        document.getElementById('avg-consumption').textContent = global.avgConso;
+        document.getElementById('total-spent').textContent = global.totalSpent + ' €';
+        document.getElementById('total-km').textContent = global.totalKm + ' km';
       }
 
+      // Historique
       let html = `<table><thead><tr><th>Date</th><th>L</th><th>€</th><th>€/L</th><th>Km</th><th>L/100</th><th></th></tr></thead><tbody>`;
-
-      // On parcourt le tableau dans l'ordre chronologique, mais on veut afficher le plus récent en premier
       const displayList = [...logs].reverse();
       displayList.forEach((entry, displayIndex) => {
         const realIndex = logs.length - 1 - displayIndex;
         const prixL = entry.litres > 0 ? (entry.prix / entry.litres).toFixed(2) : '-';
-
         let kmDisplay, consoDisplay;
         if (entry.km && entry.km > 0) {
           kmDisplay = entry.km.toFixed(1);
@@ -278,7 +300,6 @@
           kmDisplay = '<span class="waiting">—</span>';
           consoDisplay = '<span class="waiting">—</span>';
         }
-
         html += `<tr>
           <td>${entry.date}</td>
           <td>${entry.litres.toFixed(1)}</td>
@@ -289,48 +310,40 @@
           <td><button class="danger" style="padding:4px 8px; font-size:0.8rem;" data-index="${realIndex}">🗑️</button></td>
         </tr>`;
       });
-
       html += '</tbody></table>';
-      container.innerHTML = html;
+      tableContainer.innerHTML = html;
 
-      // Attacher les événements de suppression
-      container.querySelectorAll('button[data-index]').forEach(btn => {
+      tableContainer.querySelectorAll('button[data-index]').forEach(btn => {
         btn.addEventListener('click', function() {
           const idx = parseInt(this.getAttribute('data-index'));
           if (confirm('Supprimer ce plein ?')) {
-            // Attention : la suppression d'un plein doit recalculer les km du plein suivant (si on supprime le précédent, le suivant perd ses km)
-            // Pour rester simple, on supprime et on laisse l'utilisateur ajuster manuellement si besoin.
-            // Mais on pourrait améliorer : si on supprime un plein qui avait des km, le plein d'après (dans l'ordre chronologique) pourrait les perdre.
-            // On va simplement supprimer l'entrée. L'utilisateur devra peut-être éditer (mais l'app ne gère pas l'édition).
             logs.splice(idx, 1);
             saveLogs();
             renderTable();
+            renderMonthlyStats();
           }
         });
       });
+
+      renderMonthlyStats();
     }
 
-    // Ajouter un nouveau plein
     function addEntry(date, litres, prix, km) {
-      // km correspond aux kilomètres parcourus avec le plein PRÉCÉDENT
-      // 1. Mettre à jour le dernier plein existant avec ces km (si le tableau n'est pas vide)
+      const kmValue = parseFloat(km);
       if (logs.length > 0) {
-        const lastIndex = logs.length - 1;
-        logs[lastIndex].km = parseFloat(km);
+        // Met à jour le km du plein précédent
+        logs[logs.length - 1].km = kmValue;
       }
-      // 2. Ajouter la nouvelle entrée SANS km (km = null)
       logs.push({
         date: date,
         litres: parseFloat(litres),
         prix: parseFloat(prix),
-        km: null   // sera rempli au prochain plein
+        km: null
       });
-
       saveLogs();
       renderTable();
     }
 
-    // Export CSV
     function exportCSV() {
       if (logs.length === 0) return;
       let csv = "Date,Litres,Prix (€),Prix/L (€),Km parcourus,Conso L/100km\n";
@@ -366,22 +379,22 @@
         const litres = document.getElementById('litres').value;
         const prix = document.getElementById('prix').value;
         const km = document.getElementById('km').value;
-        const kmValue = parseFloat(km);
-if (!date || !litres || !prix || isNaN(kmValue) || litres <= 0 || prix <= 0) {
-  alert('Remplissez tous les champs avec des valeurs positives.');
-  return;
-}
-// Pour le premier plein, on accepte 0 km ; pour les suivants, il faut > 0
-if (logs.length > 0 && kmValue <= 0) {
-  alert('Veuillez entrer les kilomètres parcourus avec le plein précédent (valeur > 0).');
-  return;
-}
-if (logs.length === 0 && kmValue < 0) {
-  alert('Les kilomètres ne peuvent pas être négatifs.');
-  return;
-}
+
+        const kmVal = parseFloat(km);
+        if (!date || !litres || !prix || isNaN(kmVal) || parseFloat(litres) <= 0 || parseFloat(prix) <= 0) {
+          alert('Remplissez tous les champs avec des valeurs positives.');
+          return;
+        }
+        if (logs.length > 0 && kmVal <= 0) {
+          alert('Veuillez entrer les kilomètres parcourus avec le plein précédent (valeur > 0).');
+          return;
+        }
+        if (logs.length === 0 && kmVal < 0) {
+          alert('Les kilomètres ne peuvent pas être négatifs.');
+          return;
+        }
+
         addEntry(date, litres, prix, km);
-        // Vider les champs (km aussi, car il ne concerne que le plein précédent)
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
         document.getElementById('litres').value = '';
         document.getElementById('prix').value = '';
