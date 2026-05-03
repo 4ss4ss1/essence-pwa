@@ -1,0 +1,16 @@
+{
+  "name": "Suivi Essence",
+  "short_name": "Essence",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f172a",
+  "description": "Notez vos pleins d'essence : date, litres, prix, kilomètres",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛽</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

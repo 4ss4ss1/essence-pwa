@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Suivi Essence</title>
+  
+  <!-- PWA : Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- iOS : mode plein écran -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Essence">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛽</text></svg>">
+  
+  <!-- Thème couleur -->
+  <meta name="theme-color" content="#0f172a">
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f1f5f9;
+      padding: 16px;
+      color: #1e293b;
+      -webkit-user-select: none;
+      user-select: none;
+      overscroll-behavior: none;
+    }
+    .container { max-width: 500px; margin: 0 auto; }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.6rem;
+      color: #0f172a;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+    input {
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      font-size: 1rem;
+      background: #f8fafc;
+      transition: all 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+      background: white;
+    }
+    button {
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.primary {
+      background: #2563eb;
+      color: white;
+    }
+    button.primary:hover { background: #1d4ed8; }
+    button.secondary {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    button.secondary:hover { background: #cbd5e1; }
+    button.danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    button.danger:hover { background: #fecaca; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th {
+      text-align: left;
+      padding: 10px 4px;
+      border-bottom: 2px solid #e2e8f0;
+      color: #64748b;
+      font-weight: 600;
+    }
+    td {
+      padding: 10px 4px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: #f8fafc;
+      padding: 14px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: #64748b;
+      text-align: center;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>⛽ Suivi essence</h1>
+
+  <div class="card">
+    <form id="fuel-form">
+      <div class="field">
+        <label for="date">Date du plein</label>
+        <input type="date" id="date" required>
+      </div>
+      <div class="field">
+        <label for="litres">Litres (L)</label>
+        <input type="number" id="litres" step="0.01" min="0.1" placeholder="Ex: 45.5" inputmode="decimal" required>
+      </div>
+      <div class="field">
+        <label for="prix">Prix payé (€)</label>
+        <input type="number" id="prix" step="0.01" min="0.01" placeholder="Ex: 78.3" inputmode="decimal" required>
+      </div>
+      <div class="field">
+        <label for="km">Km depuis plein préc.</label>
+        <input type="number" id="km" step="0.1" min="0.1" placeholder="Ex: 520" inputmode="decimal" required>
+      </div>
+      <button type="submit" class="primary">➕ Ajouter ce plein</button>
+    </form>
+  </div>
+
+  <div id="stats-section" class="card" style="display: none;">
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value" id="avg-consumption">--</span>
+        <span class="stat-label">Conso moyenne (L/100km)</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="total-spent">--</span>
+        <span class="stat-label">Dépense totale (€)</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="total-km">--</span>
+        <span class="stat-label">Kilomètres cumulés</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📋 Historique</h2>
+    <div id="table-container">
+      <p style="color: #64748b; text-align: center;">Aucun plein pour le moment.</p>
+    </div>
+    <div class="actions" id="action-buttons" style="display: none;">
+      <button id="export-btn" class="secondary">📤 Exporter CSV</button>
+      <button id="clear-btn" class="danger">🗑️ Tout effacer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const STORAGE_KEY = 'fuel_logs_v2';
+    let logs = [];
+
+    function loadLogs() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        logs = saved ? JSON.parse(saved) : [];
+      } catch (e) { logs = []; }
+    }
+
+    function saveLogs() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+    }
+
+    function computeStats() {
+      if (logs.length === 0) return null;
+      let totalLitres = 0, totalPrix = 0, totalKm = 0;
+      logs.forEach(e => {
+        totalLitres += e.litres;
+        totalPrix += e.prix;
+        totalKm += e.km;
+      });
+      const avgConso = totalKm > 0 ? (totalLitres * 100) / totalKm : 0;
+      return {
+        avgConso: avgConso.toFixed(2),
+        totalSpent: totalPrix.toFixed(2),
+        totalKm: totalKm.toFixed(1)
+      };
+    }
+
+    function renderTable() {
+      const container = document.getElementById('table-container');
+      const statsSection = document.getElementById('stats-section');
+      const actionBtns = document.getElementById('action-buttons');
+      if (logs.length === 0) {
+        container.innerHTML = '<p style="color:#64748b; text-align:center;">Aucun plein pour le moment.</p>';
+        statsSection.style.display = 'none';
+        actionBtns.style.display = 'none';
+        return;
+      }
+      actionBtns.style.display = 'flex';
+      statsSection.style.display = 'block';
+      const stats = computeStats();
+      document.getElementById('avg-consumption').textContent = stats.avgConso;
+      document.getElementById('total-spent').textContent = stats.totalSpent + ' €';
+      document.getElementById('total-km').textContent = stats.totalKm + ' km';
+
+      let html = `<table><thead><tr><th>Date</th><th>L</th><th>€</th><th>€/L</th><th>Km</th><th>L/100</th><th></th></tr></thead><tbody>`;
+      [...logs].reverse().forEach((entry, displayIndex) => {
+        const realIndex = logs.length - 1 - displayIndex;
+        const prixL = entry.litres > 0 ? (entry.prix / entry.litres).toFixed(2) : '-';
+        const conso = entry.km > 0 ? ((entry.litres * 100) / entry.km).toFixed(1) : '-';
+        html += `<tr>
+          <td>${entry.date}</td>
+          <td>${entry.litres.toFixed(1)}</td>
+          <td>${entry.prix.toFixed(2)}</td>
+          <td>${prixL}</td>
+          <td>${entry.km.toFixed(0)}</td>
+          <td>${conso}</td>
+          <td><button class="danger" style="padding:4px 8px; font-size:0.8rem;" data-index="${realIndex}">🗑️</button></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+      container.querySelectorAll('button[data-index]').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const idx = parseInt(this.getAttribute('data-index'));
+          if (confirm('Supprimer ce plein ?')) {
+            logs.splice(idx, 1);
+            saveLogs();
+            renderTable();
+          }
+        });
+      });
+    }
+
+    function addEntry(date, litres, prix, km) {
+      logs.push({ date, litres: parseFloat(litres), prix: parseFloat(prix), km: parseFloat(km) });
+      saveLogs();
+      renderTable();
+    }
+
+    function exportCSV() {
+      if (logs.length === 0) return;
+      let csv = "Date,Litres,Prix (€),Prix/L (€),Km parcourus,Conso L/100km\n";
+      logs.forEach(e => {
+        const prixL = (e.prix / e.litres).toFixed(3);
+        const conso = e.km > 0 ? ((e.litres * 100) / e.km).toFixed(2) : '';
+        csv += `${e.date},${e.litres},${e.prix},${prixL},${e.km},${conso}\n`;
+      });
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'essence.csv';
+      a.click();
+    }
+
+    function clearAll() {
+      if (confirm('Supprimer tout l\'historique ?')) {
+        logs = [];
+        saveLogs();
+        renderTable();
+      }
+    }
+
+    function init() {
+      loadLogs();
+      renderTable();
+      document.getElementById('date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('fuel-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const date = document.getElementById('date').value;
+        const litres = document.getElementById('litres').value;
+        const prix = document.getElementById('prix').value;
+        const km = document.getElementById('km').value;
+        if (!date || !litres || !prix || !km || litres <= 0 || prix <= 0 || km <= 0) {
+          alert('Remplissez tous les champs avec des valeurs positives.');
+          return;
+        }
+        addEntry(date, litres, prix, km);
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('litres').value = '';
+        document.getElementById('prix').value = '';
+        document.getElementById('km').value = '';
+        document.getElementById('litres').focus();
+      });
+      document.getElementById('export-btn').addEventListener('click', exportCSV);
+      document.getElementById('clear-btn').addEventListener('click', clearAll);
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+    init();
+  })();
+</script>
+</body>
+</html>
