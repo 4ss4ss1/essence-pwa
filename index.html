@@ -169,7 +169,7 @@
       </div>
       <div class="field">
         <label for="km">Km parcourus avec le plein précédent</label>
-        <input type="number" id="km" step="0.1" min="0.1" placeholder="Ex: 520" inputmode="decimal" required>
+        <input type="number" id="km" step="0.1" min="0" placeholder="Ex: 520" inputmode="decimal" required>
       </div>
       <button type="submit" class="primary">➕ Ajouter ce plein</button>
     </form>
@@ -366,10 +366,20 @@
         const litres = document.getElementById('litres').value;
         const prix = document.getElementById('prix').value;
         const km = document.getElementById('km').value;
-        if (!date || !litres || !prix || !km || litres <= 0 || prix <= 0 || km <= 0) {
-          alert('Remplissez tous les champs avec des valeurs positives.');
-          return;
-        }
+        const kmValue = parseFloat(km);
+if (!date || !litres || !prix || isNaN(kmValue) || litres <= 0 || prix <= 0) {
+  alert('Remplissez tous les champs avec des valeurs positives.');
+  return;
+}
+// Pour le premier plein, on accepte 0 km ; pour les suivants, il faut > 0
+if (logs.length > 0 && kmValue <= 0) {
+  alert('Veuillez entrer les kilomètres parcourus avec le plein précédent (valeur > 0).');
+  return;
+}
+if (logs.length === 0 && kmValue < 0) {
+  alert('Les kilomètres ne peuvent pas être négatifs.');
+  return;
+}
         addEntry(date, litres, prix, km);
         // Vider les champs (km aussi, car il ne concerne que le plein précédent)
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
