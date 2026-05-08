@@ -36,7 +36,7 @@
     form { display: flex; flex-direction: column; gap: 14px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
     label { font-weight: 600; font-size: 0.9rem; color: #334155; }
-    input, select {
+    input {
       padding: 12px 14px;
       border: 1px solid #cbd5e1;
       border-radius: 12px;
@@ -44,7 +44,7 @@
       background: #f8fafc;
       transition: all 0.2s;
     }
-    input:focus, select:focus {
+    input:focus {
       outline: none;
       border-color: #2563eb;
       box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
@@ -116,7 +116,7 @@
 <div class="container">
   <h1>⛽ Suivi essence</h1>
 
-  <!-- Paramètres rapides -->
+  <!-- Paramètres -->
   <div class="card">
     <div class="field">
       <label for="capacity">Capacité du réservoir (L)</label>
@@ -129,6 +129,7 @@
     <p class="settings-note">La case « Plein complet » sera pré-cochée si vous ajoutez au moins ce pourcentage de la capacité. Vous pouvez la modifier manuellement.</p>
   </div>
 
+  <!-- Formulaire de saisie -->
   <div class="card">
     <form id="fuel-form">
       <div class="field">
@@ -155,6 +156,7 @@
     </form>
   </div>
 
+  <!-- Statistiques globales -->
   <div id="stats-section" class="card" style="display: none;">
     <div class="stats">
       <div class="stat">
@@ -172,11 +174,13 @@
     </div>
   </div>
 
+  <!-- Statistiques mensuelles -->
   <div id="monthly-section" class="card" style="display: none;">
     <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📊 Statistiques mensuelles</h2>
     <div id="monthly-container"></div>
   </div>
 
+  <!-- Historique -->
   <div class="card">
     <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📋 Historique</h2>
     <div id="table-container">
@@ -212,7 +216,6 @@
       localStorage.setItem(SETTINGS_KEY, JSON.stringify({ capacity, thresholdPercent }));
     }
 
-    // Suggestion automatique : true si volume >= seuil% de la capacité
     function suggestFullTank(litres) {
       return litres >= (thresholdPercent / 100) * capacity;
     }
@@ -228,7 +231,6 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
     }
 
-    // Retourne l'index du dernier plein complet strictement avant idx
     function getLastFullIndex(beforeIndex) {
       for (let i = beforeIndex - 1; i >= 0; i--) {
         if (logs[i].full) return i;
@@ -236,14 +238,12 @@
       return -1;
     }
 
-    // Calcule la consommation pour un plein complet à l'index idx
     function computeConsumption(idx) {
       if (!logs[idx].full) return null;
       const prevFullIdx = getLastFullIndex(idx);
-      if (prevFullIdx === -1) return null; // premier plein complet, pas de référence
+      if (prevFullIdx === -1) return null;
       const distance = logs[idx].odometer - logs[prevFullIdx].odometer;
       if (distance <= 0) return null;
-      // Cumul des litres de la période (incluant le plein complet lui-même)
       let totalLitres = 0;
       for (let i = prevFullIdx + 1; i <= idx; i++) {
         totalLitres += logs[i].litres;
@@ -293,7 +293,6 @@
           months[month].litres += litresPeriod;
           months[month].prix += prixPeriod;
         } else {
-          // appoint : on comptabilise au moins le prix dans son mois
           const month = logs[i].date.substring(0,7);
           if (!months[month]) months[month] = { litres: 0, prix: 0, km: 0 };
           months[month].prix += logs[i].prix;
@@ -459,7 +458,6 @@
 
       document.getElementById('date').value = new Date().toISOString().split('T')[0];
       
-      // Mise à jour automatique de la case selon le volume saisi
       document.getElementById('litres').addEventListener('input', updateFullTankSuggestion);
       updateFullTankSuggestion();
 
@@ -469,7 +467,7 @@
         const litres = parseFloat(document.getElementById('litres').value);
         const prix = parseFloat(document.getElementById('prix').value);
         const odometer = parseInt(document.getElementById('odometer').value);
-        const full = document.getElementById('full-tank-checkbox').checked; // décision finale de l'utilisateur
+        const full = document.getElementById('full-tank-checkbox').checked;
 
         if (!date || isNaN(litres) || isNaN(prix) || isNaN(odometer) || litres <= 0 || prix <= 0 || odometer < 0) {
           alert('Veuillez remplir tous les champs avec des valeurs valides.');
