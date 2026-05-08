@@ -99,7 +99,16 @@
     }
     .pill.full { background: #dcfce7; color: #166534; }
     .pill.partial { background: #fef08a; color: #854d0e; }
-    .hidden { display: none; }
+    .checkbox-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .checkbox-field input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
     .settings-note { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
   </style>
 </head>
@@ -108,19 +117,18 @@
   <h1>⛽ Suivi essence</h1>
 
   <!-- Paramètres rapides -->
-  <div class="card" id="settings-card">
+  <div class="card">
     <div class="field">
-      <label for="capacity">Capacité du réservoir (litres)</label>
+      <label for="capacity">Capacité du réservoir (L)</label>
       <input type="number" id="capacity" value="56" step="1" min="10" max="200" inputmode="numeric">
     </div>
     <div class="field">
-      <label for="threshold">Seuil plein complet (% de la capacité)</label>
-      <input type="number" id="threshold" value="90" step="1" min="50" max="100" inputmode="numeric">
+      <label for="threshold">Seuil de suggestion "plein complet" (%)</label>
+      <input type="number" id="threshold" value="80" step="1" min="50" max="100" inputmode="numeric">
     </div>
-    <p class="settings-note">Un plein est considéré comme complet si le volume ajouté atteint ce pourcentage de la capacité.</p>
+    <p class="settings-note">La case « Plein complet » sera pré-cochée si vous ajoutez au moins ce pourcentage de la capacité. Vous pouvez la modifier manuellement.</p>
   </div>
 
-  <!-- Formulaire de saisie -->
   <div class="card">
     <form id="fuel-form">
       <div class="field">
@@ -129,21 +137,24 @@
       </div>
       <div class="field">
         <label for="litres">Litres ajoutés (L)</label>
-        <input type="number" id="litres" step="0.01" min="0.1" placeholder="Ex: 45.5" inputmode="decimal" required>
+        <input type="number" id="litres" step="0.01" min="0.1" placeholder="Ex: 30" inputmode="decimal" required>
       </div>
       <div class="field">
         <label for="prix">Prix payé (€)</label>
-        <input type="number" id="prix" step="0.01" min="0.01" placeholder="Ex: 78.3" inputmode="decimal" required>
+        <input type="number" id="prix" step="0.01" min="0.01" placeholder="Ex: 52.5" inputmode="decimal" required>
       </div>
-      <div class="field" id="km-field">
-        <label for="km">Km parcourus depuis le dernier plein complet</label>
-        <input type="number" id="km" step="0.1" min="0.1" placeholder="Ex: 520" inputmode="decimal">
+      <div class="field">
+        <label for="odometer">Kilométrage total au compteur</label>
+        <input type="number" id="odometer" step="1" min="0" placeholder="Ex: 123456" inputmode="numeric" required>
+      </div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="full-tank-checkbox">
+        <label for="full-tank-checkbox">Plein complet (réservoir rempli)</label>
       </div>
       <button type="submit" class="primary">➕ Ajouter</button>
     </form>
   </div>
 
-  <!-- Statistiques globales -->
   <div id="stats-section" class="card" style="display: none;">
     <div class="stats">
       <div class="stat">
@@ -156,18 +167,16 @@
       </div>
       <div class="stat">
         <span class="stat-value" id="total-km">--</span>
-        <span class="stat-label">Kilomètres cumulés</span>
+        <span class="stat-label">Kilométrage actuel</span>
       </div>
     </div>
   </div>
 
-  <!-- Statistiques mensuelles -->
   <div id="monthly-section" class="card" style="display: none;">
     <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📊 Statistiques mensuelles</h2>
     <div id="monthly-container"></div>
   </div>
 
-  <!-- Historique -->
   <div class="card">
     <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📋 Historique</h2>
     <div id="table-container">
@@ -182,12 +191,11 @@
 
 <script>
   (function() {
-    const STORAGE_KEY = 'fuel_logs_v6';
-    const SETTINGS_KEY = 'fuel_settings';
+    const STORAGE_KEY = 'fuel_logs_v10';
+    const SETTINGS_KEY = 'fuel_settings_v10';
     let logs = [];
-    // Paramètres
-    let capacity = 56;         // litres
-    let thresholdPercent = 90; // pourcentage
+    let capacity = 56;
+    let thresholdPercent = 80;
 
     function loadSettings() {
       try {
@@ -195,20 +203,18 @@
         if (saved) {
           const s = JSON.parse(saved);
           capacity = s.capacity || 56;
-          thresholdPercent = s.thresholdPercent || 90;
+          thresholdPercent = s.thresholdPercent || 80;
         }
-      } catch(e) { /* valeurs par défaut */ }
+      } catch (e) {}
     }
 
     function saveSettings() {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify({ capacity, thresholdPercent }));
-      // Recalculer l'affichage car le statut des pleins existants peut changer visuellement ? Non, on ne change pas les logs existants.
-      // Mais les nouveaux pleins utiliseront le nouveau seuil.
     }
 
-    function isFullTank(litres) {
-      const thresholdLitres = (thresholdPercent / 100) * capacity;
-      return litres >= thresholdLitres;
+    // Suggestion automatique : true si volume >= seuil% de la capacité
+    function suggestFullTank(litres) {
+      return litres >= (thresholdPercent / 100) * capacity;
     }
 
     function loadLogs() {
@@ -222,101 +228,102 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
     }
 
-    // Retourne l'index du dernier plein complet avant l'index donné (ou -1)
-    function getPreviousFullIndex(beforeIndex) {
+    // Retourne l'index du dernier plein complet strictement avant idx
+    function getLastFullIndex(beforeIndex) {
       for (let i = beforeIndex - 1; i >= 0; i--) {
         if (logs[i].full) return i;
       }
       return -1;
     }
 
-    // Calcule la consommation pour un plein complet d'index idx
-    function computeConsumptionForFullTank(idx) {
-      if (!logs[idx].full || logs[idx].km === null) return null;
-      const prevFullIdx = getPreviousFullIndex(idx);
+    // Calcule la consommation pour un plein complet à l'index idx
+    function computeConsumption(idx) {
+      if (!logs[idx].full) return null;
+      const prevFullIdx = getLastFullIndex(idx);
+      if (prevFullIdx === -1) return null; // premier plein complet, pas de référence
+      const distance = logs[idx].odometer - logs[prevFullIdx].odometer;
+      if (distance <= 0) return null;
+      // Cumul des litres de la période (incluant le plein complet lui-même)
       let totalLitres = 0;
-      const startIdx = prevFullIdx === -1 ? 0 : prevFullIdx + 1;
-      for (let i = startIdx; i <= idx; i++) {
+      for (let i = prevFullIdx + 1; i <= idx; i++) {
         totalLitres += logs[i].litres;
       }
-      const km = logs[idx].km;
-      return km > 0 ? ((totalLitres * 100) / km).toFixed(1) : null;
+      return ((totalLitres * 100) / distance).toFixed(1);
     }
 
     function computeGlobalStats() {
-      let totalLitres = 0;
-      let totalKm = 0;
+      if (logs.length === 0) return null;
+      let totalLitres = 0, totalKm = 0;
       for (let i = 0; i < logs.length; i++) {
-        if (logs[i].full && logs[i].km !== null && logs[i].km > 0) {
-          const prevFullIdx = getPreviousFullIndex(i);
-          let litresSum = 0;
-          const startIdx = prevFullIdx === -1 ? 0 : prevFullIdx + 1;
-          for (let j = startIdx; j <= i; j++) {
-            litresSum += logs[j].litres;
+        if (logs[i].full) {
+          const prevFullIdx = getLastFullIndex(i);
+          if (prevFullIdx !== -1) {
+            const distance = logs[i].odometer - logs[prevFullIdx].odometer;
+            if (distance > 0) {
+              totalKm += distance;
+              let periodLitres = 0;
+              for (let j = prevFullIdx + 1; j <= i; j++) periodLitres += logs[j].litres;
+              totalLitres += periodLitres;
+            }
           }
-          totalLitres += litresSum;
-          totalKm += logs[i].km;
         }
       }
       const avgConso = totalKm > 0 ? (totalLitres * 100) / totalKm : 0;
       const totalSpent = logs.reduce((sum, e) => sum + e.prix, 0);
-      return {
-        avgConso: avgConso.toFixed(2),
-        totalSpent: totalSpent.toFixed(2),
-        totalKm: totalKm.toFixed(1)
-      };
+      const lastOdo = logs.length > 0 ? logs[logs.length-1].odometer : 0;
+      return { avgConso: avgConso.toFixed(2), totalSpent: totalSpent.toFixed(2), lastOdometer: lastOdo };
     }
 
     function computeMonthlyStats() {
+      if (logs.length === 0) return [];
       const months = {};
       for (let i = 0; i < logs.length; i++) {
-        if (logs[i].full && logs[i].km !== null && logs[i].km > 0) {
-          const prevFullIdx = getPreviousFullIndex(i);
-          const startIdx = prevFullIdx === -1 ? 0 : prevFullIdx + 1;
-          let periodLitres = 0;
-          let periodPrix = 0;
-          for (let j = startIdx; j <= i; j++) {
-            periodLitres += logs[j].litres;
-            periodPrix += logs[j].prix;
+        if (logs[i].full) {
+          const prevFullIdx = getLastFullIndex(i);
+          const distance = prevFullIdx === -1 ? 0 : logs[i].odometer - logs[prevFullIdx].odometer;
+          let litresPeriod = 0, prixPeriod = 0;
+          const start = prevFullIdx === -1 ? 0 : prevFullIdx + 1;
+          for (let j = start; j <= i; j++) {
+            litresPeriod += logs[j].litres;
+            prixPeriod += logs[j].prix;
           }
-          const periodKm = logs[i].km;
-          const monthKey = logs[i].date.substring(0, 7);
-          if (!months[monthKey]) months[monthKey] = { litres: 0, prix: 0, km: 0 };
-          months[monthKey].litres += periodLitres;
-          months[monthKey].prix += periodPrix;
-          months[monthKey].km += periodKm;
+          const month = logs[i].date.substring(0,7);
+          if (!months[month]) months[month] = { litres: 0, prix: 0, km: 0 };
+          months[month].km += distance;
+          months[month].litres += litresPeriod;
+          months[month].prix += prixPeriod;
         } else {
-          // appoint : on cumule seulement le prix et les litres dans le mois (les litres seront inclus dans la conso globale mais pas pour ce mois sans km)
-          const monthKey = logs[i].date.substring(0, 7);
-          if (!months[monthKey]) months[monthKey] = { litres: 0, prix: 0, km: 0 };
-          months[monthKey].prix += logs[i].prix;
-          months[monthKey].litres += logs[i].litres;
+          // appoint : on comptabilise au moins le prix dans son mois
+          const month = logs[i].date.substring(0,7);
+          if (!months[month]) months[month] = { litres: 0, prix: 0, km: 0 };
+          months[month].prix += logs[i].prix;
         }
       }
-      const monthlyArray = Object.keys(months).map(month => {
+      const array = Object.keys(months).map(month => {
         const m = months[month];
         const conso = m.km > 0 ? ((m.litres * 100) / m.km).toFixed(1) : null;
-        return { month, totalPrix: m.prix.toFixed(2), totalKm: m.km.toFixed(1), conso };
+        return {
+          month,
+          totalPrix: m.prix.toFixed(2),
+          totalKm: m.km.toFixed(1),
+          conso
+        };
       }).sort((a, b) => b.month.localeCompare(a.month));
-      return monthlyArray;
+      return array;
     }
 
     function renderMonthlyStats() {
       const container = document.getElementById('monthly-container');
       const section = document.getElementById('monthly-section');
       const data = computeMonthlyStats();
-      if (data.length === 0) {
-        section.style.display = 'none';
-        return;
-      }
+      if (data.length === 0) { section.style.display = 'none'; return; }
       section.style.display = 'block';
       let html = `<table><thead><tr><th>Mois</th><th>Conso (L/100)</th><th>Dépense (€)</th><th>Km</th></tr></thead><tbody>`;
       data.forEach(item => {
-        const [year, monthNum] = item.month.split('-');
-        const date = new Date(year, monthNum - 1);
-        const monthName = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-        const consoDisplay = item.conso ? item.conso : '<span class="waiting">—</span>';
-        html += `<tr><td>${monthName}</td><td>${consoDisplay}</td><td>${item.totalPrix}</td><td>${item.totalKm}</td></tr>`;
+        const [y, m] = item.month.split('-');
+        const monthName = new Date(y, m-1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+        const consoDisp = item.conso ? item.conso : '<span class="waiting">—</span>';
+        html += `<tr><td>${monthName}</td><td>${consoDisp}</td><td>${item.totalPrix}</td><td>${item.totalKm}</td></tr>`;
       });
       html += '</tbody></table>';
       container.innerHTML = html;
@@ -326,55 +333,46 @@
       const tableContainer = document.getElementById('table-container');
       const statsSection = document.getElementById('stats-section');
       const actionBtns = document.getElementById('action-buttons');
-
       if (logs.length === 0) {
-        tableContainer.innerHTML = '<p style="color:#64748b; text-align:center;">Aucun plein enregistré.</p>';
+        tableContainer.innerHTML = '<p style="color:#64748b;text-align:center;">Aucun plein enregistré.</p>';
         statsSection.style.display = 'none';
         document.getElementById('monthly-section').style.display = 'none';
         actionBtns.style.display = 'none';
         return;
       }
-
       actionBtns.style.display = 'flex';
       statsSection.style.display = 'block';
       const global = computeGlobalStats();
-      document.getElementById('avg-consumption').textContent = global.avgConso;
-      document.getElementById('total-spent').textContent = global.totalSpent + ' €';
-      document.getElementById('total-km').textContent = global.totalKm + ' km';
+      if (global) {
+        document.getElementById('avg-consumption').textContent = global.avgConso;
+        document.getElementById('total-spent').textContent = global.totalSpent + ' €';
+        document.getElementById('total-km').textContent = global.lastOdometer + ' km';
+      }
 
-      let html = `<table><thead><tr><th>Date</th><th>Type</th><th>L</th><th>€</th><th>€/L</th><th>Km</th><th>L/100</th><th></th></tr></thead><tbody>`;
-      const displayList = [...logs].reverse();
-      displayList.forEach((entry, displayIndex) => {
+      let html = `<table><thead><tr><th>Date</th><th>Type</th><th>L</th><th>€</th><th>€/L</th><th>Km total</th><th>Conso (L/100)</th><th></th></tr></thead><tbody>`;
+      const reversed = [...logs].reverse();
+      reversed.forEach((entry, displayIndex) => {
         const realIndex = logs.length - 1 - displayIndex;
         const prixL = entry.litres > 0 ? (entry.prix / entry.litres).toFixed(2) : '-';
-        const typePill = entry.full
-          ? '<span class="pill full">Complet</span>'
-          : '<span class="pill partial">Appoint</span>';
-
-        let kmDisplay, consoDisplay;
-        if (entry.full && entry.km !== null) {
-          kmDisplay = entry.km.toFixed(1);
-          const conso = computeConsumptionForFullTank(realIndex);
-          consoDisplay = conso ? conso : '?';
-        } else {
-          kmDisplay = '<span class="waiting">—</span>';
-          consoDisplay = '<span class="waiting">—</span>';
+        const typePill = entry.full ? '<span class="pill full">Complet</span>' : '<span class="pill partial">Appoint</span>';
+        let consoDisplay = '<span class="waiting">—</span>';
+        if (entry.full) {
+          const conso = computeConsumption(realIndex);
+          if (conso) consoDisplay = conso;
         }
-
         html += `<tr>
           <td>${entry.date}</td>
           <td>${typePill}</td>
           <td>${entry.litres.toFixed(1)}</td>
           <td>${entry.prix.toFixed(2)}</td>
           <td>${prixL}</td>
-          <td>${kmDisplay}</td>
+          <td>${entry.odometer}</td>
           <td>${consoDisplay}</td>
-          <td><button class="danger" style="padding:4px 8px; font-size:0.8rem;" data-index="${realIndex}">🗑️</button></td>
+          <td><button class="danger" style="padding:4px 8px;font-size:0.8rem;" data-index="${realIndex}">🗑️</button></td>
         </tr>`;
       });
       html += '</tbody></table>';
       tableContainer.innerHTML = html;
-
       tableContainer.querySelectorAll('button[data-index]').forEach(btn => {
         btn.addEventListener('click', function() {
           const idx = parseInt(this.getAttribute('data-index'));
@@ -386,58 +384,38 @@
           }
         });
       });
-
       renderMonthlyStats();
     }
 
-    function updateFormState() {
-      const litresInput = document.getElementById('litres');
-      const kmField = document.getElementById('km-field');
-      const kmInput = document.getElementById('km');
-      const litres = parseFloat(litresInput.value);
-      if (!isNaN(litres) && litres > 0) {
-        const full = isFullTank(litres);
-        if (full) {
-          kmField.classList.remove('hidden');
-          kmInput.required = true;
-        } else {
-          kmField.classList.add('hidden');
-          kmInput.required = false;
-          kmInput.value = '';
-        }
-      } else {
-        kmField.classList.add('hidden');
-        kmInput.required = false;
-        kmInput.value = '';
+    function addEntry(date, litres, prix, odometer, full) {
+      if (logs.length > 0 && odometer <= logs[logs.length-1].odometer) {
+        alert(`Le kilométrage doit être supérieur au précédent (${logs[logs.length-1].odometer} km).`);
+        return false;
       }
-    }
-
-    function addEntry(date, litres, prix, full, km) {
       logs.push({
         date,
         litres: parseFloat(litres),
         prix: parseFloat(prix),
-        full,
-        km: full ? parseFloat(km) : null
+        odometer: parseInt(odometer),
+        full
       });
       saveLogs();
       renderTable();
+      return true;
     }
 
     function exportCSV() {
       if (logs.length === 0) return;
-      let csv = "Date,Type,Litres,Prix (€),Prix/L (€),Km,L/100\n";
+      let csv = "Date,Type,Litres,Prix (€),Prix/L (€),Km total,Conso L/100\n";
       logs.forEach((e, idx) => {
         const prixL = e.litres > 0 ? (e.prix / e.litres).toFixed(3) : '';
         const type = e.full ? 'Complet' : 'Appoint';
-        const kmVal = (e.full && e.km !== null) ? e.km.toFixed(1) : '';
-        const conso = e.full ? computeConsumptionForFullTank(idx) : '';
-        csv += `${e.date},${type},${e.litres},${e.prix},${prixL},${kmVal},${conso}\n`;
+        const conso = e.full ? computeConsumption(idx) : '';
+        csv += `${e.date},${type},${e.litres},${e.prix},${prixL},${e.odometer},${conso}\n`;
       });
       const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = URL.createObjectURL(blob);
       a.download = 'essence.csv';
       a.click();
     }
@@ -450,65 +428,66 @@
       }
     }
 
+    function updateFullTankSuggestion() {
+      const litresInput = document.getElementById('litres');
+      const checkbox = document.getElementById('full-tank-checkbox');
+      const litres = parseFloat(litresInput.value);
+      if (!isNaN(litres) && litres > 0) {
+        checkbox.checked = suggestFullTank(litres);
+      } else {
+        checkbox.checked = false;
+      }
+    }
+
     function init() {
       loadSettings();
       loadLogs();
       
-      // Appliquer les valeurs des paramètres
       document.getElementById('capacity').value = capacity;
       document.getElementById('threshold').value = thresholdPercent;
 
-      // Écouteurs des paramètres
       document.getElementById('capacity').addEventListener('change', function() {
-        capacity = parseFloat(this.value) || 56;
+        capacity = parseInt(this.value) || 56;
         saveSettings();
-        updateFormState();
-        // Ne pas re-render l'historique car le statut plein/complet est déjà fixé dans les logs
+        updateFullTankSuggestion();
       });
       document.getElementById('threshold').addEventListener('change', function() {
-        thresholdPercent = parseFloat(this.value) || 90;
+        thresholdPercent = parseInt(this.value) || 80;
         saveSettings();
-        updateFormState();
+        updateFullTankSuggestion();
       });
 
       document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
-      // Mise à jour dynamique du champ km selon le volume saisi
-      document.getElementById('litres').addEventListener('input', updateFormState);
-      updateFormState();
+      
+      // Mise à jour automatique de la case selon le volume saisi
+      document.getElementById('litres').addEventListener('input', updateFullTankSuggestion);
+      updateFullTankSuggestion();
 
       document.getElementById('fuel-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const date = document.getElementById('date').value;
         const litres = parseFloat(document.getElementById('litres').value);
         const prix = parseFloat(document.getElementById('prix').value);
-        const full = isFullTank(litres);
-        const km = full ? document.getElementById('km').value : null;
+        const odometer = parseInt(document.getElementById('odometer').value);
+        const full = document.getElementById('full-tank-checkbox').checked; // décision finale de l'utilisateur
 
-        if (!date || isNaN(litres) || isNaN(prix) || litres <= 0 || prix <= 0) {
-          alert('Remplissez tous les champs avec des valeurs positives.');
+        if (!date || isNaN(litres) || isNaN(prix) || isNaN(odometer) || litres <= 0 || prix <= 0 || odometer < 0) {
+          alert('Veuillez remplir tous les champs avec des valeurs valides.');
           return;
         }
-        if (full) {
-          const kmVal = parseFloat(km);
-          if (isNaN(kmVal) || kmVal <= 0) {
-            alert('Pour un plein complet, indiquez les kilomètres parcourus (>0).');
-            return;
-          }
-        }
 
-        addEntry(date, litres, prix, full, km);
-        document.getElementById('date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('litres').value = '';
-        document.getElementById('prix').value = '';
-        document.getElementById('km').value = '';
-        updateFormState();
-        document.getElementById('litres').focus();
+        if (addEntry(date, litres, prix, odometer, full)) {
+          document.getElementById('date').value = new Date().toISOString().split('T')[0];
+          document.getElementById('litres').value = '';
+          document.getElementById('prix').value = '';
+          document.getElementById('odometer').value = '';
+          updateFullTankSuggestion();
+          document.getElementById('litres').focus();
+        }
       });
 
       document.getElementById('export-btn').addEventListener('click', exportCSV);
       document.getElementById('clear-btn').addEventListener('click', clearAll);
-
       renderTable();
     }
 
