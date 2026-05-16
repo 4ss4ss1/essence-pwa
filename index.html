@@ -1,501 +1,1229 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Suivi Essence</title>
-  
-  <link rel="manifest" href="manifest.json">
-  
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Essence">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <meta name="theme-color" content="#0f172a">
-  
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #f1f5f9;
-      padding: 16px;
-      color: #1e293b;
-      -webkit-user-select: none;
-      user-select: none;
-      overscroll-behavior: none;
-    }
-    .container { max-width: 500px; margin: 0 auto; }
-    h1 { text-align: center; margin-bottom: 20px; font-size: 1.6rem; color: #0f172a; }
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-    }
-    form { display: flex; flex-direction: column; gap: 14px; }
-    .field { display: flex; flex-direction: column; gap: 4px; }
-    label { font-weight: 600; font-size: 0.9rem; color: #334155; }
-    input {
-      padding: 12px 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 12px;
-      font-size: 1rem;
-      background: #f8fafc;
-      transition: all 0.2s;
-    }
-    input:focus {
-      outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-      background: white;
-    }
-    button {
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    button.primary { background: #2563eb; color: white; }
-    button.primary:hover { background: #1d4ed8; }
-    button.secondary { background: #e2e8f0; color: #1e293b; }
-    button.secondary:hover { background: #cbd5e1; }
-    button.danger { background: #fee2e2; color: #b91c1c; }
-    button.danger:hover { background: #fecaca; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Suivi Essence</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Essence">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#111210">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
+:root {
+  --bg: #f5f3ee;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --surface3: #e8e4db;
+  --border: #d4cfc4;
+  --border-strong: #b5afa0;
+  --text: #1a1814;
+  --text-2: #5a5650;
+  --text-3: #8a847a;
+  --accent: #b45309;       /* ambre — couleur essence */
+  --accent-light: #fef3c7;
+  --accent-mid: #d97706;
+  --accent-dark: #92400e;
+  --danger: #9b1c1c;
+  --danger-light: #fef2f2;
+  --ok: #166534;
+  --ok-light: #f0fdf4;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow: 0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg: 0 20px 40px rgba(0,0,0,.12);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --font-ui: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --tr: 180ms cubic-bezier(.4,0,.2,1);
+}
+body.dark {
+  --bg: #111210;
+  --surface: #1c1c1a;
+  --surface2: #242422;
+  --surface3: #2c2c29;
+  --border: #3a3a36;
+  --border-strong: #525250;
+  --text: #f0ede6;
+  --text-2: #a8a49e;
+  --text-3: #6a6660;
+  --accent: #d97706;
+  --accent-light: #1c1200;
+  --accent-mid: #f59e0b;
+  --accent-dark: #fbbf24;
+  --danger: #dc2626;
+  --danger-light: #1c0a0a;
+  --ok: #4ade80;
+  --ok-light: #052e16;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow: 0 4px 12px rgba(0,0,0,.4);
+  --shadow-lg: 0 20px 40px rgba(0,0,0,.5);
+}
 
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 4px; }
-    th {
-      text-align: left;
-      padding: 10px 4px;
-      border-bottom: 2px solid #e2e8f0;
-      color: #64748b;
-      font-weight: 600;
-    }
-    td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .stats {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      background: #f8fafc;
-      padding: 14px;
-      border-radius: 16px;
-      margin-bottom: 16px;
-    }
-    .stat { display: flex; flex-direction: column; align-items: center; }
-    .stat-value { font-size: 1.3rem; font-weight: 700; }
-    .stat-label { font-size: 0.8rem; color: #64748b; text-align: center; }
-    .actions { display: flex; gap: 12px; margin-top: 14px; justify-content: center; }
-    .waiting { color: #94a3b8; font-style: italic; }
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-    .pill.full { background: #dcfce7; color: #166534; }
-    .pill.partial { background: #fef08a; color: #854d0e; }
-    .checkbox-field {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .checkbox-field input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-    }
-    .settings-note { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
-  </style>
+/* ═══════════════════════════════════════
+   RESET
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding: 16px 12px 80px;
+  transition: background var(--tr), color var(--tr);
+  overscroll-behavior: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, select { font-family: inherit; font-size: inherit; }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+#app { max-width: 520px; margin: 0 auto; }
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+.app-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.app-logo {
+  width: 38px; height: 38px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.app-title { font-size: 1.1rem; font-weight: 800; letter-spacing: -.01em; flex: 1; }
+.header-actions { display: flex; gap: 6px; }
+
+/* ═══════════════════════════════════════
+   VÉHICULES
+═══════════════════════════════════════ */
+.vehicle-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.vehicle-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.vchip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px; font-size: .78rem; font-weight: 600;
+  background: var(--surface); border: 1.5px solid var(--border);
+  color: var(--text-2); cursor: pointer; transition: all var(--tr);
+}
+.vchip:hover { border-color: var(--accent-mid); color: var(--accent-mid); }
+.vchip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.vchip .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════
+   TABS
+═══════════════════════════════════════ */
+.tabs {
+  display: flex; border-bottom: 1.5px solid var(--border);
+  margin-bottom: 20px; gap: 2px;
+}
+.tab {
+  padding: 9px 14px; font-size: .8rem; font-weight: 600;
+  color: var(--text-3); border-radius: 8px 8px 0 0; cursor: pointer;
+  transition: all var(--tr); border: 1.5px solid transparent;
+  border-bottom: none; margin-bottom: -1.5px;
+  display: flex; align-items: center; gap: 5px;
+}
+.tab:hover { color: var(--text); background: var(--surface2); }
+.tab.active { background: var(--surface); color: var(--text); border-color: var(--border); border-bottom-color: var(--surface); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ═══════════════════════════════════════
+   BOUTONS
+═══════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 13px; border-radius: 8px; font-size: .78rem;
+  font-weight: 600; font-family: var(--font-ui);
+  transition: all var(--tr); white-space: nowrap;
+  border: 1px solid transparent;
+}
+.btn-ghost { background: var(--surface); color: var(--text-2); border-color: var(--border); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--border-strong); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { opacity: .88; }
+.btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: var(--danger-light); }
+.btn-ok { background: var(--ok); color: #fff; }
+.btn-ok:hover { opacity: .88; }
+.btn-icon { padding: 7px; font-size: 1rem; }
+.btn-sm { padding: 4px 9px; font-size: .73rem; }
+.btn-full { width: 100%; justify-content: center; padding: 12px; font-size: .88rem; }
+
+/* ═══════════════════════════════════════
+   KPI CARDS
+═══════════════════════════════════════ */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 16px;
+}
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 10px;
+  position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent); border-radius: 3px 3px 0 0;
+}
+.kpi-label { font-size: .65rem; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+.kpi-value { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 500; letter-spacing: -.02em; }
+.kpi-sub { font-size: .65rem; color: var(--text-3); font-family: var(--font-mono); margin-top: 2px; }
+
+/* ═══════════════════════════════════════
+   FORMULAIRE
+═══════════════════════════════════════ */
+.form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.form-title { font-size: .9rem; font-weight: 700; margin-bottom: 14px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-grid .span2 { grid-column: span 2; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: .72rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+.field input, .field select {
+  padding: 9px 11px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 7px; color: var(--text); font-size: .85rem;
+  transition: border-color var(--tr), background var(--tr); width: 100%;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent-mid); background: var(--surface); }
+.field .field-error { font-size: .7rem; color: var(--danger); display: none; margin-top: 2px; }
+.field.has-error input, .field.has-error select { border-color: var(--danger); }
+.field.has-error .field-error { display: block; }
+.checkbox-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0;
+}
+.checkbox-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.checkbox-row label { font-size: .82rem; font-weight: 600; cursor: pointer; color: var(--text-2); }
+
+/* ═══════════════════════════════════════
+   PARAMÈTRES
+═══════════════════════════════════════ */
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px;
+}
+.settings-note { font-size: .72rem; color: var(--text-3); margin-top: 6px; line-height: 1.5; }
+
+/* ═══════════════════════════════════════
+   HISTORIQUE TABLE
+═══════════════════════════════════════ */
+.table-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: var(--shadow-sm); margin-bottom: 14px;
+}
+.table-card-header {
+  padding: 12px 14px; font-size: .8rem; font-weight: 700;
+  border-bottom: 1px solid var(--border); background: var(--surface2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: var(--surface2); font-size: .65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--text-3);
+  padding: 8px 8px; text-align: left; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr { transition: background var(--tr); }
+tbody tr:hover { background: var(--surface2); }
+tbody tr + tr { border-top: 1px solid var(--border); }
+tbody td { padding: 8px 8px; font-size: .78rem; color: var(--text); vertical-align: middle; white-space: nowrap; }
+.td-mono { font-family: var(--font-mono); font-size: .75rem; }
+.pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: .65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.pill-full { background: var(--ok-light); color: var(--ok); border: 1px solid var(--ok); }
+.pill-partial { background: var(--accent-light); color: var(--accent-dark); border: 1px solid var(--accent-mid); }
+.waiting { color: var(--text-3); font-family: var(--font-mono); }
+.row-btn {
+  padding: 3px 7px; border-radius: 6px; font-size: .8rem;
+  color: var(--text-3); transition: all var(--tr); border: 1px solid transparent;
+}
+.row-btn:hover { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
+.empty-state {
+  text-align: center; padding: 32px 16px;
+  color: var(--text-3); font-size: .82rem;
+}
+.empty-state .es-icon { font-size: 2rem; margin-bottom: 8px; }
+
+/* ═══════════════════════════════════════
+   ANALYSE
+═══════════════════════════════════════ */
+.section-title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--text-3); margin-bottom: 10px;
+}
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; margin-bottom: 14px;
+}
+/* Graphique conso mensuelle */
+.conso-chart {
+  display: flex; align-items: flex-end; gap: 5px;
+  height: 110px; padding: 10px 4px 4px; overflow-x: auto;
+}
+.conso-bar-group {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  flex: 0 0 auto; min-width: 32px;
+}
+.conso-bar {
+  width: 18px; border-radius: 4px 4px 0 0; min-height: 3px;
+  background: var(--accent); transition: opacity var(--tr);
+  cursor: pointer; position: relative;
+}
+.conso-bar:hover { opacity: .75; }
+.conso-bar-val { font-size: .58rem; font-family: var(--font-mono); color: var(--text-3); text-align: center; }
+.conso-bar-lbl { font-size: .58rem; color: var(--text-3); font-family: var(--font-mono); text-align: center; }
+/* Référence conso */
+.conso-ref {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .72rem; color: var(--text-3); margin-top: 8px;
+}
+.conso-ref-dot { width: 10px; height: 10px; border-radius: 2px; background: var(--accent); }
+/* Bar prix/L */
+.prix-chart { display: flex; flex-direction: column; gap: 6px; }
+.prix-row { display: flex; align-items: center; gap: 8px; }
+.prix-label { width: 60px; font-size: .7rem; color: var(--text-2); text-align: right; flex-shrink: 0; font-family: var(--font-mono); }
+.prix-bar-bg { flex: 1; height: 10px; background: var(--surface3); border-radius: 5px; overflow: hidden; }
+.prix-bar-fill { height: 100%; border-radius: 5px; background: var(--accent-mid); transition: width .4s cubic-bezier(.4,0,.2,1); }
+.prix-val { font-size: .7rem; font-family: var(--font-mono); color: var(--text-2); width: 60px; text-align: right; flex-shrink: 0; }
+/* Table mensuelle */
+.monthly-table td, .monthly-table th { padding: 6px 8px; }
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 100;
+  align-items: center; justify-content: center; padding: 16px;
+}
+.modal-overlay.open { display: flex; animation: fadeIn .15s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); width: 100%; max-width: 380px;
+  max-height: 90dvh; overflow-y: auto;
+  animation: slideUp .2s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 0;
+}
+.modal-title { font-size: 1rem; font-weight: 800; }
+.modal-close {
+  width: 28px; height: 28px; border-radius: 7px; background: var(--surface2);
+  color: var(--text-2); font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--tr);
+}
+.modal-close:hover { background: var(--surface3); color: var(--text); }
+.modal-body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+/* ═══════════════════════════════════════
+   COLOR PICKER
+═══════════════════════════════════════ */
+.color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-swatch {
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: all var(--tr);
+}
+.color-swatch.selected { border-color: var(--text); transform: scale(1.15); }
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+.toast-wrap {
+  position: fixed; bottom: 20px; right: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 999; pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 10px; font-size: .8rem; font-weight: 600;
+  box-shadow: var(--shadow); pointer-events: auto; max-width: 280px;
+  animation: toastIn .25s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes toastIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+.toast.success { background: #166534; color: #fff; }
+.toast.error   { background: #991b1b; color: #fff; }
+.toast.info    { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+/* ═══════════════════════════════════════
+   LOADER
+═══════════════════════════════════════ */
+.loader-overlay {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; z-index: 9999; transition: opacity .3s;
+}
+.loader-overlay.hidden { opacity: 0; pointer-events: none; }
+.loader-bar { width: 100px; height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.loader-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; animation: lp 1s ease-in-out infinite; }
+@keyframes lp { 0%,100%{width:20%;margin-left:0} 50%{width:60%;margin-left:20%} }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .span2 { grid-column: span 1; }
+  .header-actions .btn span { display: none; }
+}
+</style>
 </head>
 <body>
-<div class="container">
-  <h1>⛽ Suivi essence</h1>
 
-  <!-- Paramètres -->
-  <div class="card">
-    <div class="field">
-      <label for="capacity">Capacité du réservoir (L)</label>
-      <input type="number" id="capacity" value="56" step="1" min="10" max="200" inputmode="numeric">
+<!-- LOADER -->
+<div class="loader-overlay" id="loader">
+  <div style="font-size:2.2rem">⛽</div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  <div style="font-size:.78rem;font-weight:600;color:var(--text-3);font-family:'DM Mono',monospace">Chargement…</div>
+</div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="app-logo">⛽</div>
+    <div style="flex:1">
+      <div class="app-title">Suivi Essence</div>
     </div>
-    <div class="field">
-      <label for="threshold">Seuil de suggestion "plein complet" (%)</label>
-      <input type="number" id="threshold" value="80" step="1" min="50" max="100" inputmode="numeric">
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-icon" id="theme-btn" title="Thème">☀️</button>
+      <button class="btn btn-ghost btn-sm" id="export-btn"><span>📤</span><span> Export</span></button>
+      <button class="btn btn-ghost btn-sm" id="save-btn"><span>💾</span><span> Save</span></button>
+      <button class="btn btn-ghost btn-icon" id="restore-btn" title="Restaurer">📂</button>
     </div>
-    <p class="settings-note">La case « Plein complet » sera pré-cochée si vous ajoutez au moins ce pourcentage de la capacité. Vous pouvez la modifier manuellement.</p>
+  </header>
+
+  <!-- VÉHICULES -->
+  <div class="vehicle-bar">
+    <div class="vehicle-chips" id="vehicle-chips"></div>
+    <button class="btn btn-ghost btn-sm" id="btn-new-vehicle">＋ Véhicule</button>
   </div>
 
-  <!-- Formulaire de saisie -->
-  <div class="card">
-    <form id="fuel-form">
-      <div class="field">
-        <label for="date">Date</label>
-        <input type="date" id="date" required>
-      </div>
-      <div class="field">
-        <label for="litres">Litres ajoutés (L)</label>
-        <input type="number" id="litres" step="0.01" min="0.1" placeholder="Ex: 30" inputmode="decimal" required>
-      </div>
-      <div class="field">
-        <label for="prix">Prix payé (€)</label>
-        <input type="number" id="prix" step="0.01" min="0.01" placeholder="Ex: 52.5" inputmode="decimal" required>
-      </div>
-      <div class="field">
-        <label for="odometer">Kilométrage total au compteur</label>
-        <input type="number" id="odometer" step="1" min="0" placeholder="Ex: 123456" inputmode="numeric" required>
-      </div>
-      <div class="checkbox-field">
-        <input type="checkbox" id="full-tank-checkbox">
-        <label for="full-tank-checkbox">Plein complet (réservoir rempli)</label>
-      </div>
-      <button type="submit" class="primary">➕ Ajouter</button>
-    </form>
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-tab="saisie">⛽ Saisie</div>
+    <div class="tab" data-tab="historique">📋 Historique</div>
+    <div class="tab" data-tab="analyse">📊 Analyse</div>
+    <div class="tab" data-tab="params">⚙️ Params</div>
   </div>
 
-  <!-- Statistiques globales -->
-  <div id="stats-section" class="card" style="display: none;">
-    <div class="stats">
-      <div class="stat">
-        <span class="stat-value" id="avg-consumption">--</span>
-        <span class="stat-label">Conso moyenne (L/100km)</span>
+  <!-- ═══ SAISIE ═══ -->
+  <div class="tab-panel active" id="panel-saisie">
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Conso moy.</div>
+        <div class="kpi-value" id="kpi-conso">—</div>
+        <div class="kpi-sub">L/100 km</div>
       </div>
-      <div class="stat">
-        <span class="stat-value" id="total-spent">--</span>
-        <span class="stat-label">Dépense totale (€)</span>
+      <div class="kpi-card">
+        <div class="kpi-label">Dépense tot.</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub">€</div>
       </div>
-      <div class="stat">
-        <span class="stat-value" id="total-km">--</span>
-        <span class="stat-label">Kilométrage actuel</span>
+      <div class="kpi-card">
+        <div class="kpi-label">Km actuel</div>
+        <div class="kpi-value" id="kpi-km">—</div>
+        <div class="kpi-sub">km</div>
+      </div>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="form-card">
+      <div class="form-title" id="form-title">➕ Nouveau plein</div>
+      <div class="form-grid">
+        <div class="field span2">
+          <label>Date</label>
+          <input type="date" id="f-date">
+          <span class="field-error">Date requise</span>
+        </div>
+        <div class="field">
+          <label>Litres ajoutés (L)</label>
+          <input type="number" id="f-litres" step="0.01" min="0.1" placeholder="Ex: 42,5" inputmode="decimal">
+          <span class="field-error">Valeur invalide</span>
+        </div>
+        <div class="field">
+          <label>Prix payé (€)</label>
+          <input type="number" id="f-prix" step="0.01" min="0.01" placeholder="Ex: 68,00" inputmode="decimal">
+          <span class="field-error">Valeur invalide</span>
+        </div>
+        <div class="field span2">
+          <label>Kilométrage compteur</label>
+          <input type="number" id="f-km" step="1" min="0" placeholder="Ex: 123 456" inputmode="numeric">
+          <span class="field-error">Km invalide ou inférieur au précédent</span>
+        </div>
+        <div class="field span2">
+          <div class="checkbox-row">
+            <input type="checkbox" id="f-full">
+            <label for="f-full">Plein complet (réservoir rempli à ras)</label>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost btn-sm" id="btn-form-cancel" style="display:none">Annuler</button>
+        <button class="btn btn-primary btn-full" id="btn-form-save">Enregistrer</button>
       </div>
     </div>
   </div>
 
-  <!-- Statistiques mensuelles -->
-  <div id="monthly-section" class="card" style="display: none;">
-    <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📊 Statistiques mensuelles</h2>
-    <div id="monthly-container"></div>
+  <!-- ═══ HISTORIQUE ═══ -->
+  <div class="tab-panel" id="panel-historique">
+    <div class="table-card">
+      <div class="table-card-header">
+        <span>Historique des pleins</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-danger btn-sm" id="btn-clear">🗑 Tout effacer</button>
+        </div>
+      </div>
+      <div class="table-wrap" id="histo-wrap">
+        <div class="empty-state"><div class="es-icon">📋</div>Aucun plein enregistré.</div>
+      </div>
+    </div>
   </div>
 
-  <!-- Historique -->
-  <div class="card">
-    <h2 style="font-size: 1.1rem; margin-bottom: 12px;">📋 Historique</h2>
-    <div id="table-container">
-      <p style="color: #64748b; text-align: center;">Aucun plein enregistré.</p>
+  <!-- ═══ ANALYSE ═══ -->
+  <div class="tab-panel" id="panel-analyse">
+    <div id="analyse-content">
+      <div class="empty-state"><div class="es-icon">📊</div>Pas encore de données à analyser.</div>
     </div>
-    <div class="actions" id="action-buttons" style="display: none;">
-      <button id="export-btn" class="secondary">📤 Exporter CSV</button>
-      <button id="clear-btn" class="danger">🗑️ Tout effacer</button>
+  </div>
+
+  <!-- ═══ PARAMS ═══ -->
+  <div class="tab-panel" id="panel-params">
+    <div class="settings-card">
+      <div class="form-title">⚙️ Paramètres du véhicule</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Capacité réservoir (L)</label>
+          <input type="number" id="p-capacity" step="1" min="10" max="200" inputmode="numeric">
+          <span class="field-error">Valeur invalide</span>
+        </div>
+        <div class="field">
+          <label>Seuil plein complet (%)</label>
+          <input type="number" id="p-threshold" step="1" min="50" max="100" inputmode="numeric">
+          <span class="field-error">Entre 50 et 100</span>
+        </div>
+      </div>
+      <p class="settings-note">La case « Plein complet » est pré-cochée si vous ajoutez ≥ seuil × capacité litres. Modifiable manuellement.</p>
+      <button class="btn btn-primary btn-full" id="btn-save-params" style="margin-top:14px">Enregistrer</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- MODAL VÉHICULE -->
+<div class="modal-overlay" id="modal-vehicle">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-vehicle-title">Nouveau véhicule</div>
+      <button class="modal-close" data-close="modal-vehicle">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Nom du véhicule</label>
+        <input type="text" id="v-nom" placeholder="Ex: Clio, Golf, Tesla…">
+        <span class="field-error">Nom requis</span>
+      </div>
+      <div class="field">
+        <label>Couleur</label>
+        <div class="color-picker" id="v-colors"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" data-close="modal-vehicle">Annuler</button>
+        <button class="btn btn-primary" id="btn-vehicle-save">Créer</button>
+      </div>
     </div>
   </div>
 </div>
 
+<input type="file" id="file-restore" accept=".json" style="display:none">
+
 <script>
-  (function() {
-    const STORAGE_KEY = 'fuel_logs_v10';
-    const SETTINGS_KEY = 'fuel_settings_v10';
-    let logs = [];
-    let capacity = 56;
-    let thresholdPercent = 80;
+(function () {
+'use strict';
 
-    function loadSettings() {
-      try {
-        const saved = localStorage.getItem(SETTINGS_KEY);
-        if (saved) {
-          const s = JSON.parse(saved);
-          capacity = s.capacity || 56;
-          thresholdPercent = s.thresholdPercent || 80;
+/* ─── INDEXEDDB ─── */
+const DB_NAME = 'essence-v1', DB_VER = 1;
+let db;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      ['pleins','vehicules','settings'].forEach(s => {
+        if (!d.objectStoreNames.contains(s))
+          d.createObjectStore(s, { keyPath: s === 'settings' ? 'key' : 'id' });
+      });
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+function getAll(store) {
+  return new Promise((res, rej) => {
+    const r = db.transaction(store).objectStore(store).getAll();
+    r.onsuccess = () => res(r.result || []);
+    r.onerror   = () => rej(r.error);
+  });
+}
+function put(store, record) {
+  return new Promise((res, rej) => {
+    const t = db.transaction(store, 'readwrite');
+    t.oncomplete = res; t.onerror = t.onabort = () => rej(t.error);
+    t.objectStore(store).put(record);
+  });
+}
+function del(store, key) {
+  return new Promise((res, rej) => {
+    const t = db.transaction(store, 'readwrite');
+    t.oncomplete = res; t.onerror = () => rej(t.error);
+    t.objectStore(store).delete(key);
+  });
+}
+function clearStore(store) {
+  return new Promise((res, rej) => {
+    const t = db.transaction(store, 'readwrite');
+    t.oncomplete = res; t.onerror = () => rej(t.error);
+    t.objectStore(store).clear();
+  });
+}
+
+/* ─── ÉTAT ─── */
+let pleins = [], vehicules = [], settings = {};
+let activeVehicleId = null;
+let nextPleinId = 1, nextVehicleId = 1;
+let editingPleinId = null;
+let editingVehicleId = null;
+let selectedColor = '#b45309';
+
+const COLORS = ['#b45309','#1a4731','#1e40af','#7c3aed','#be185d','#0369a1','#065f46','#78350f'];
+
+/* ─── HELPERS ─── */
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt2(n) { return parseFloat(n).toFixed(2); }
+function fmt1(n) { return parseFloat(n).toFixed(1); }
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  $('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
+document.querySelectorAll('.modal-overlay').forEach(o => o.onclick = e => { if (e.target === o) closeModal(o.id); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id)); });
+
+function validate(rules) {
+  let ok = true;
+  rules.forEach(({ el, check }) => {
+    const wrap = el.closest('.field');
+    const valid = check(el.value);
+    wrap && wrap.classList.toggle('has-error', !valid);
+    if (!valid) ok = false;
+  });
+  return ok;
+}
+
+/* ─── THÈME ─── */
+const THEME_KEY = 'essence-theme';
+const TICONS = { auto:'🔄', dark:'🌙', light:'☀️' };
+function applyTheme(mode) {
+  const dark = mode === 'dark' || (mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('dark', dark);
+  const btn = $('theme-btn');
+  btn.textContent = TICONS[mode];
+  btn.title = 'Thème : ' + mode;
+  localStorage.setItem(THEME_KEY, mode);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((localStorage.getItem(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+});
+$('theme-btn').onclick = () => {
+  const cur = localStorage.getItem(THEME_KEY) || 'auto';
+  applyTheme(cur === 'auto' ? 'dark' : cur === 'dark' ? 'light' : 'auto');
+};
+
+/* ─── SETTINGS ─── */
+function getVehicleSettings() {
+  const vId = activeVehicleId;
+  return {
+    capacity: settings[`capacity_${vId}`] ?? 56,
+    threshold: settings[`threshold_${vId}`] ?? 80
+  };
+}
+async function saveVehicleSettings(capacity, threshold) {
+  const vId = activeVehicleId;
+  settings[`capacity_${vId}`] = capacity;
+  settings[`threshold_${vId}`] = threshold;
+  await put('settings', { key: `capacity_${vId}`, value: capacity });
+  await put('settings', { key: `threshold_${vId}`, value: threshold });
+}
+
+function loadParamsForm() {
+  const { capacity, threshold } = getVehicleSettings();
+  $('p-capacity').value = capacity;
+  $('p-threshold').value = threshold;
+}
+
+$('btn-save-params').onclick = async () => {
+  const cap = parseInt($('p-capacity').value);
+  const thr = parseInt($('p-threshold').value);
+  const ok = validate([
+    { el: $('p-capacity'), check: () => !isNaN(cap) && cap >= 10 && cap <= 200 },
+    { el: $('p-threshold'), check: () => !isNaN(thr) && thr >= 50 && thr <= 100 },
+  ]);
+  if (!ok) return;
+  await saveVehicleSettings(cap, thr);
+  toast('Paramètres enregistrés.', 'success');
+};
+
+/* ─── VÉHICULES ─── */
+function renderVehicles() {
+  const chips = $('vehicle-chips');
+  chips.innerHTML = '';
+  vehicules.forEach(v => {
+    const ch = document.createElement('div');
+    ch.className = 'vchip' + (v.id === activeVehicleId ? ' active' : '');
+    ch.innerHTML = `<span class="dot" style="background:${v.color}"></span>${esc(v.nom)}`;
+    ch.onclick = () => { activeVehicleId = v.id; renderVehicles(); loadParamsForm(); renderAll(); };
+    ch.addEventListener('contextmenu', e => { e.preventDefault(); openEditVehicle(v); });
+    chips.appendChild(ch);
+  });
+}
+
+function openEditVehicle(v = null) {
+  editingVehicleId = v ? v.id : null;
+  $('modal-vehicle-title').textContent = v ? 'Modifier le véhicule' : 'Nouveau véhicule';
+  $('v-nom').value = v ? v.nom : '';
+  $('btn-vehicle-save').textContent = v ? 'Modifier' : 'Créer';
+  selectedColor = v ? v.color : COLORS[0];
+  renderColorPicker();
+  $('v-nom').closest('.field').classList.remove('has-error');
+  openModal('modal-vehicle');
+  setTimeout(() => $('v-nom').focus(), 50);
+}
+
+function renderColorPicker() {
+  $('v-colors').innerHTML = COLORS.map(c =>
+    `<div class="color-swatch${selectedColor===c?' selected':''}" style="background:${c}" data-col="${c}"></div>`
+  ).join('');
+  $('v-colors').querySelectorAll('.color-swatch').forEach(sw => {
+    sw.onclick = () => { selectedColor = sw.dataset.col; renderColorPicker(); };
+  });
+}
+
+$('btn-new-vehicle').onclick = () => openEditVehicle();
+
+$('btn-vehicle-save').onclick = async () => {
+  const nom = $('v-nom').value.trim();
+  if (!nom) { $('v-nom').closest('.field').classList.add('has-error'); return; }
+  $('v-nom').closest('.field').classList.remove('has-error');
+  if (editingVehicleId) {
+    const v = vehicules.find(x => x.id === editingVehicleId);
+    if (v) { v.nom = nom; v.color = selectedColor; await put('vehicules', v); }
+  } else {
+    const v = { id: nextVehicleId++, nom, color: selectedColor };
+    vehicules.push(v);
+    await put('vehicules', v);
+    if (!activeVehicleId) activeVehicleId = v.id;
+  }
+  closeModal('modal-vehicle');
+  renderVehicles(); loadParamsForm(); renderAll();
+  toast(editingVehicleId ? 'Véhicule modifié.' : 'Véhicule créé.', 'success');
+};
+
+/* ─── CALCULS ─── */
+function pleinsVehicule(vId = activeVehicleId) {
+  return pleins.filter(p => p.vehiculeId === vId).sort((a, b) => a.date.localeCompare(b.date) || a.km - b.km);
+}
+
+function getLastFullIdx(arr, beforeIdx) {
+  for (let i = beforeIdx - 1; i >= 0; i--) if (arr[i].full) return i;
+  return -1;
+}
+
+function computeConsoIdx(arr, idx) {
+  if (!arr[idx].full) return null;
+  const prev = getLastFullIdx(arr, idx);
+  if (prev === -1) return null;
+  const dist = arr[idx].km - arr[prev].km;
+  if (dist <= 0) return null;
+  let litres = 0;
+  for (let i = prev + 1; i <= idx; i++) litres += arr[i].litres;
+  return (litres * 100 / dist);
+}
+
+function computeGlobalStats(arr) {
+  if (!arr.length) return null;
+  let totalKm = 0, totalLitres = 0;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].full) {
+      const prev = getLastFullIdx(arr, i);
+      if (prev !== -1) {
+        const dist = arr[i].km - arr[prev].km;
+        if (dist > 0) {
+          totalKm += dist;
+          let l = 0; for (let j = prev + 1; j <= i; j++) l += arr[j].litres;
+          totalLitres += l;
         }
-      } catch (e) {}
-    }
-
-    function saveSettings() {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ capacity, thresholdPercent }));
-    }
-
-    function suggestFullTank(litres) {
-      return litres >= (thresholdPercent / 100) * capacity;
-    }
-
-    function loadLogs() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        logs = saved ? JSON.parse(saved) : [];
-      } catch (e) { logs = []; }
-    }
-
-    function saveLogs() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-    }
-
-    function getLastFullIndex(beforeIndex) {
-      for (let i = beforeIndex - 1; i >= 0; i--) {
-        if (logs[i].full) return i;
-      }
-      return -1;
-    }
-
-    function computeConsumption(idx) {
-      if (!logs[idx].full) return null;
-      const prevFullIdx = getLastFullIndex(idx);
-      if (prevFullIdx === -1) return null;
-      const distance = logs[idx].odometer - logs[prevFullIdx].odometer;
-      if (distance <= 0) return null;
-      let totalLitres = 0;
-      for (let i = prevFullIdx + 1; i <= idx; i++) {
-        totalLitres += logs[i].litres;
-      }
-      return ((totalLitres * 100) / distance).toFixed(1);
-    }
-
-    function computeGlobalStats() {
-      if (logs.length === 0) return null;
-      let totalLitres = 0, totalKm = 0;
-      for (let i = 0; i < logs.length; i++) {
-        if (logs[i].full) {
-          const prevFullIdx = getLastFullIndex(i);
-          if (prevFullIdx !== -1) {
-            const distance = logs[i].odometer - logs[prevFullIdx].odometer;
-            if (distance > 0) {
-              totalKm += distance;
-              let periodLitres = 0;
-              for (let j = prevFullIdx + 1; j <= i; j++) periodLitres += logs[j].litres;
-              totalLitres += periodLitres;
-            }
-          }
-        }
-      }
-      const avgConso = totalKm > 0 ? (totalLitres * 100) / totalKm : 0;
-      const totalSpent = logs.reduce((sum, e) => sum + e.prix, 0);
-      const lastOdo = logs.length > 0 ? logs[logs.length-1].odometer : 0;
-      return { avgConso: avgConso.toFixed(2), totalSpent: totalSpent.toFixed(2), lastOdometer: lastOdo };
-    }
-
-    function computeMonthlyStats() {
-      if (logs.length === 0) return [];
-      const months = {};
-      for (let i = 0; i < logs.length; i++) {
-        if (logs[i].full) {
-          const prevFullIdx = getLastFullIndex(i);
-          const distance = prevFullIdx === -1 ? 0 : logs[i].odometer - logs[prevFullIdx].odometer;
-          let litresPeriod = 0, prixPeriod = 0;
-          const start = prevFullIdx === -1 ? 0 : prevFullIdx + 1;
-          for (let j = start; j <= i; j++) {
-            litresPeriod += logs[j].litres;
-            prixPeriod += logs[j].prix;
-          }
-          const month = logs[i].date.substring(0,7);
-          if (!months[month]) months[month] = { litres: 0, prix: 0, km: 0 };
-          months[month].km += distance;
-          months[month].litres += litresPeriod;
-          months[month].prix += prixPeriod;
-        } else {
-          const month = logs[i].date.substring(0,7);
-          if (!months[month]) months[month] = { litres: 0, prix: 0, km: 0 };
-          months[month].prix += logs[i].prix;
-        }
-      }
-      const array = Object.keys(months).map(month => {
-        const m = months[month];
-        const conso = m.km > 0 ? ((m.litres * 100) / m.km).toFixed(1) : null;
-        return {
-          month,
-          totalPrix: m.prix.toFixed(2),
-          totalKm: m.km.toFixed(1),
-          conso
-        };
-      }).sort((a, b) => b.month.localeCompare(a.month));
-      return array;
-    }
-
-    function renderMonthlyStats() {
-      const container = document.getElementById('monthly-container');
-      const section = document.getElementById('monthly-section');
-      const data = computeMonthlyStats();
-      if (data.length === 0) { section.style.display = 'none'; return; }
-      section.style.display = 'block';
-      let html = `<table><thead><tr><th>Mois</th><th>Conso (L/100)</th><th>Dépense (€)</th><th>Km</th></tr></thead><tbody>`;
-      data.forEach(item => {
-        const [y, m] = item.month.split('-');
-        const monthName = new Date(y, m-1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
-        const consoDisp = item.conso ? item.conso : '<span class="waiting">—</span>';
-        html += `<tr><td>${monthName}</td><td>${consoDisp}</td><td>${item.totalPrix}</td><td>${item.totalKm}</td></tr>`;
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
-    }
-
-    function renderTable() {
-      const tableContainer = document.getElementById('table-container');
-      const statsSection = document.getElementById('stats-section');
-      const actionBtns = document.getElementById('action-buttons');
-      if (logs.length === 0) {
-        tableContainer.innerHTML = '<p style="color:#64748b;text-align:center;">Aucun plein enregistré.</p>';
-        statsSection.style.display = 'none';
-        document.getElementById('monthly-section').style.display = 'none';
-        actionBtns.style.display = 'none';
-        return;
-      }
-      actionBtns.style.display = 'flex';
-      statsSection.style.display = 'block';
-      const global = computeGlobalStats();
-      if (global) {
-        document.getElementById('avg-consumption').textContent = global.avgConso;
-        document.getElementById('total-spent').textContent = global.totalSpent + ' €';
-        document.getElementById('total-km').textContent = global.lastOdometer + ' km';
-      }
-
-      let html = `<table><thead><tr><th>Date</th><th>Type</th><th>L</th><th>€</th><th>€/L</th><th>Km total</th><th>Conso (L/100)</th><th></th></tr></thead><tbody>`;
-      const reversed = [...logs].reverse();
-      reversed.forEach((entry, displayIndex) => {
-        const realIndex = logs.length - 1 - displayIndex;
-        const prixL = entry.litres > 0 ? (entry.prix / entry.litres).toFixed(2) : '-';
-        const typePill = entry.full ? '<span class="pill full">Complet</span>' : '<span class="pill partial">Appoint</span>';
-        let consoDisplay = '<span class="waiting">—</span>';
-        if (entry.full) {
-          const conso = computeConsumption(realIndex);
-          if (conso) consoDisplay = conso;
-        }
-        html += `<tr>
-          <td>${entry.date}</td>
-          <td>${typePill}</td>
-          <td>${entry.litres.toFixed(1)}</td>
-          <td>${entry.prix.toFixed(2)}</td>
-          <td>${prixL}</td>
-          <td>${entry.odometer}</td>
-          <td>${consoDisplay}</td>
-          <td><button class="danger" style="padding:4px 8px;font-size:0.8rem;" data-index="${realIndex}">🗑️</button></td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-      tableContainer.innerHTML = html;
-      tableContainer.querySelectorAll('button[data-index]').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const idx = parseInt(this.getAttribute('data-index'));
-          if (confirm('Supprimer ce plein ?')) {
-            logs.splice(idx, 1);
-            saveLogs();
-            renderTable();
-            renderMonthlyStats();
-          }
-        });
-      });
-      renderMonthlyStats();
-    }
-
-    function addEntry(date, litres, prix, odometer, full) {
-      if (logs.length > 0 && odometer <= logs[logs.length-1].odometer) {
-        alert(`Le kilométrage doit être supérieur au précédent (${logs[logs.length-1].odometer} km).`);
-        return false;
-      }
-      logs.push({
-        date,
-        litres: parseFloat(litres),
-        prix: parseFloat(prix),
-        odometer: parseInt(odometer),
-        full
-      });
-      saveLogs();
-      renderTable();
-      return true;
-    }
-
-    function exportCSV() {
-      if (logs.length === 0) return;
-      let csv = "Date,Type,Litres,Prix (€),Prix/L (€),Km total,Conso L/100\n";
-      logs.forEach((e, idx) => {
-        const prixL = e.litres > 0 ? (e.prix / e.litres).toFixed(3) : '';
-        const type = e.full ? 'Complet' : 'Appoint';
-        const conso = e.full ? computeConsumption(idx) : '';
-        csv += `${e.date},${type},${e.litres},${e.prix},${prixL},${e.odometer},${conso}\n`;
-      });
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'essence.csv';
-      a.click();
-    }
-
-    function clearAll() {
-      if (confirm('Supprimer tout l\'historique ?')) {
-        logs = [];
-        saveLogs();
-        renderTable();
       }
     }
+  }
+  const avgConso = totalKm > 0 ? (totalLitres * 100 / totalKm) : 0;
+  const totalSpent = arr.reduce((s, p) => s + p.prix, 0);
+  const lastKm = arr.length ? arr[arr.length - 1].km : 0;
+  return { avgConso, totalSpent, lastKm };
+}
 
-    function updateFullTankSuggestion() {
-      const litresInput = document.getElementById('litres');
-      const checkbox = document.getElementById('full-tank-checkbox');
-      const litres = parseFloat(litresInput.value);
-      if (!isNaN(litres) && litres > 0) {
-        checkbox.checked = suggestFullTank(litres);
-      } else {
-        checkbox.checked = false;
+function computeMonthlyStats(arr) {
+  const months = {};
+  for (let i = 0; i < arr.length; i++) {
+    const mois = arr[i].date.slice(0, 7);
+    if (!months[mois]) months[mois] = { litres: 0, prix: 0, km: 0, prixL: [] };
+    if (arr[i].full) {
+      const prev = getLastFullIdx(arr, i);
+      const dist = prev !== -1 ? arr[i].km - arr[prev].km : 0;
+      let l = 0; const start = prev === -1 ? 0 : prev + 1;
+      for (let j = start; j <= i; j++) { l += arr[j].litres; }
+      months[mois].km += dist; months[mois].litres += l;
+    }
+    months[mois].prix += arr[i].prix;
+    if (arr[i].litres > 0) months[mois].prixL.push(arr[i].prix / arr[i].litres);
+  }
+  return Object.entries(months).sort((a, b) => b[0].localeCompare(a[0])).map(([mois, d]) => ({
+    mois,
+    conso: d.km > 0 ? (d.litres * 100 / d.km) : null,
+    prix: d.prix,
+    km: d.km,
+    avgPrixL: d.prixL.length ? d.prixL.reduce((s, v) => s + v, 0) / d.prixL.length : null
+  }));
+}
+
+/* ─── FORMULAIRE SAISIE ─── */
+function suggestFull(litres) {
+  const { capacity, threshold } = getVehicleSettings();
+  return litres >= (threshold / 100) * capacity;
+}
+
+$('f-litres').addEventListener('input', () => {
+  const l = parseFloat($('f-litres').value);
+  if (!isNaN(l) && l > 0) $('f-full').checked = suggestFull(l);
+  else $('f-full').checked = false;
+});
+
+function resetForm() {
+  editingPleinId = null;
+  $('form-title').textContent = '➕ Nouveau plein';
+  $('f-date').value = new Date().toISOString().slice(0, 10);
+  $('f-litres').value = '';
+  $('f-prix').value = '';
+  $('f-km').value = '';
+  $('f-full').checked = false;
+  $('btn-form-cancel').style.display = 'none';
+  $('btn-form-save').textContent = 'Enregistrer';
+  document.querySelectorAll('#panel-saisie .field').forEach(f => f.classList.remove('has-error'));
+}
+
+function openEditPlein(id) {
+  const p = pleins.find(x => x.id === id);
+  if (!p) return;
+  editingPleinId = id;
+  $('form-title').textContent = '✏️ Modifier le plein';
+  $('f-date').value = p.date;
+  $('f-litres').value = p.litres;
+  $('f-prix').value = p.prix;
+  $('f-km').value = p.km;
+  $('f-full').checked = p.full;
+  $('btn-form-cancel').style.display = '';
+  $('btn-form-save').textContent = 'Modifier';
+  document.querySelectorAll('#panel-saisie .field').forEach(f => f.classList.remove('has-error'));
+  // Aller sur onglet saisie
+  switchTab('saisie');
+  $('f-litres').focus();
+}
+
+$('btn-form-cancel').onclick = resetForm;
+
+$('btn-form-save').onclick = async () => {
+  if (!activeVehicleId) { toast('Créez d\'abord un véhicule.', 'error'); return; }
+
+  const date   = $('f-date').value;
+  const litres = parseFloat($('f-litres').value);
+  const prix   = parseFloat($('f-prix').value);
+  const km     = parseInt($('f-km').value);
+  const full   = $('f-full').checked;
+
+  // Récupérer les pleins du véhicule, hors celui en édition
+  const arr = pleinsVehicule().filter(p => p.id !== editingPleinId);
+  const lastKm = arr.length ? arr[arr.length - 1].km : 0;
+
+  const ok = validate([
+    { el: $('f-date'),   check: v => !!v },
+    { el: $('f-litres'), check: () => !isNaN(litres) && litres > 0 },
+    { el: $('f-prix'),   check: () => !isNaN(prix) && prix > 0 },
+    { el: $('f-km'),     check: () => !isNaN(km) && km >= 0 && (editingPleinId ? true : km > lastKm) },
+  ]);
+  if (!ok) {
+    if (!isNaN(km) && km <= lastKm && !editingPleinId)
+      toast(`Le km doit être > ${lastKm} (dernier enregistré).`, 'error');
+    return;
+  }
+
+  if (editingPleinId) {
+    const p = pleins.find(x => x.id === editingPleinId);
+    if (p) { p.date = date; p.litres = litres; p.prix = prix; p.km = km; p.full = full; await put('pleins', p); }
+    toast('Plein modifié.', 'success');
+  } else {
+    const p = { id: nextPleinId++, date, litres, prix, km, full, vehiculeId: activeVehicleId };
+    pleins.push(p);
+    await put('pleins', p);
+    toast('Plein enregistré.', 'success');
+  }
+
+  resetForm();
+  renderAll();
+};
+
+/* ─── KPIs ─── */
+function renderKPIs() {
+  const arr = pleinsVehicule();
+  const stats = computeGlobalStats(arr);
+  if (!stats || !arr.length) {
+    $('kpi-conso').textContent = '—';
+    $('kpi-total').textContent = '—';
+    $('kpi-km').textContent = '—';
+    return;
+  }
+  $('kpi-conso').textContent = stats.avgConso > 0 ? fmt1(stats.avgConso) : '—';
+  $('kpi-total').textContent = fmt2(stats.totalSpent);
+  $('kpi-km').textContent = stats.lastKm.toLocaleString('fr-FR');
+}
+
+/* ─── HISTORIQUE ─── */
+function renderHistorique() {
+  const arr = pleinsVehicule();
+  const wrap = $('histo-wrap');
+
+  if (!arr.length) {
+    wrap.innerHTML = '<div class="empty-state"><div class="es-icon">📋</div>Aucun plein enregistré.</div>';
+    return;
+  }
+
+  const reversed = [...arr].reverse();
+  let html = `<table><thead><tr>
+    <th>Date</th><th>Type</th><th>L</th><th>€</th><th>€/L</th><th>Km</th><th>L/100</th><th></th>
+  </tr></thead><tbody>`;
+
+  reversed.forEach(p => {
+    const idx = arr.findIndex(x => x.id === p.id);
+    const prixL = p.litres > 0 ? fmt2(p.prix / p.litres) : '—';
+    const conso = computeConsoIdx(arr, idx);
+    const consoStr = conso !== null ? `<span class="td-mono">${fmt1(conso)}</span>` : '<span class="waiting">—</span>';
+    const pill = p.full
+      ? '<span class="pill pill-full">Complet</span>'
+      : '<span class="pill pill-partial">Appoint</span>';
+    html += `<tr>
+      <td class="td-mono">${p.date}</td>
+      <td>${pill}</td>
+      <td class="td-mono">${fmt1(p.litres)}</td>
+      <td class="td-mono">${fmt2(p.prix)}</td>
+      <td class="td-mono">${prixL}</td>
+      <td class="td-mono">${p.km.toLocaleString('fr-FR')}</td>
+      <td>${consoStr}</td>
+      <td>
+        <div style="display:flex;gap:3px">
+          <button class="row-btn edit-histo" data-id="${p.id}" title="Modifier">✏️</button>
+          <button class="row-btn del-histo" data-id="${p.id}" title="Supprimer">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  // Délégation d'événements
+  wrap.addEventListener('click', async e => {
+    const edit = e.target.closest('.edit-histo');
+    if (edit) { openEditPlein(parseInt(edit.dataset.id)); return; }
+    const del = e.target.closest('.del-histo');
+    if (del) {
+      if (!confirm('Supprimer ce plein ?')) return;
+      const id = parseInt(del.dataset.id);
+      await del_plein(id);
+    }
+  });
+}
+
+async function del_plein(id) {
+  await del('pleins', id);
+  pleins = pleins.filter(p => p.id !== id);
+  renderAll();
+  toast('Plein supprimé.', 'info');
+}
+
+$('btn-clear').onclick = async () => {
+  const arr = pleinsVehicule();
+  if (!arr.length) { toast('Aucun plein à supprimer.', 'info'); return; }
+  if (!confirm(`Supprimer les ${arr.length} pleins de ce véhicule ?`)) return;
+  const t = db.transaction('pleins', 'readwrite');
+  const store = t.objectStore('pleins');
+  arr.forEach(p => store.delete(p.id));
+  await new Promise((res, rej) => { t.oncomplete = res; t.onerror = () => rej(t.error); });
+  pleins = pleins.filter(p => p.vehiculeId !== activeVehicleId);
+  renderAll();
+  toast('Historique effacé.', 'info');
+};
+
+/* ─── ANALYSE ─── */
+function renderAnalyse() {
+  const arr = pleinsVehicule();
+  const content = $('analyse-content');
+
+  if (arr.length < 2) {
+    content.innerHTML = '<div class="empty-state"><div class="es-icon">📊</div>Pas encore assez de données.<br>Enregistrez au moins 2 pleins complets.</div>';
+    return;
+  }
+
+  const monthly = computeMonthlyStats(arr);
+  const stats = computeGlobalStats(arr);
+  const totalSpent = stats ? stats.totalSpent : 0;
+
+  let html = '';
+
+  // Graphique conso mensuelle
+  const consoData = monthly.filter(m => m.conso !== null).slice(0, 12).reverse();
+  if (consoData.length >= 2) {
+    const maxC = Math.max(...consoData.map(m => m.conso), 1);
+    const avgC = consoData.reduce((s, m) => s + m.conso, 0) / consoData.length;
+
+    html += `<div class="section-title">Consommation mensuelle (L/100 km)</div>
+    <div class="chart-card">
+      <div class="conso-chart">`;
+    consoData.forEach(m => {
+      const h = Math.max((m.conso / maxC * 85), 3).toFixed(0);
+      const [y, mo] = m.mois.split('-');
+      const lbl = mo + '/' + y.slice(2);
+      html += `<div class="conso-bar-group">
+        <div class="conso-bar-val">${fmt1(m.conso)}</div>
+        <div class="conso-bar" style="height:${h}px" title="${lbl} : ${fmt1(m.conso)} L/100"></div>
+        <div class="conso-bar-lbl">${lbl}</div>
+      </div>`;
+    });
+    html += `</div>
+      <div class="conso-ref">
+        <div class="conso-ref-dot"></div>
+        Moyenne : <strong>${fmt1(avgC)} L/100 km</strong>
+      </div>
+    </div>`;
+  }
+
+  // Prix/L mensuel
+  const prixLData = monthly.filter(m => m.avgPrixL !== null).slice(0, 10).reverse();
+  if (prixLData.length >= 2) {
+    const maxP = Math.max(...prixLData.map(m => m.avgPrixL), 1);
+    html += `<div class="section-title" style="margin-top:16px">Prix moyen au litre</div>
+    <div class="chart-card">
+      <div class="prix-chart">`;
+    prixLData.forEach(m => {
+      const pct = (m.avgPrixL / maxP * 100).toFixed(1);
+      const [y, mo] = m.mois.split('-');
+      html += `<div class="prix-row">
+        <div class="prix-label">${mo}/${y.slice(2)}</div>
+        <div class="prix-bar-bg"><div class="prix-bar-fill" style="width:${pct}%"></div></div>
+        <div class="prix-val">${fmt2(m.avgPrixL)} €/L</div>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+
+  // Table mensuelle
+  html += `<div class="section-title" style="margin-top:16px">Statistiques mensuelles</div>
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="monthly-table"><thead><tr>
+        <th>Mois</th><th>Conso (L/100)</th><th>Dépense (€)</th><th>Km parcourus</th>
+      </tr></thead><tbody>`;
+  monthly.forEach(m => {
+    const [y, mo] = m.mois.split('-');
+    const mName = new Date(parseInt(y), parseInt(mo) - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const consoStr = m.conso !== null ? `<span class="td-mono">${fmt1(m.conso)}</span>` : '<span class="waiting">—</span>';
+    const pct = totalSpent > 0 ? (m.prix / totalSpent * 100).toFixed(0) + '%' : '';
+    html += `<tr>
+      <td>${mName}</td>
+      <td>${consoStr}</td>
+      <td class="td-mono">${fmt2(m.prix)} <span style="color:var(--text-3);font-size:.65rem">${pct}</span></td>
+      <td class="td-mono">${m.km > 0 ? m.km.toFixed(0) + ' km' : '<span class="waiting">—</span>'}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div></div>';
+
+  content.innerHTML = html;
+}
+
+/* ─── TABS ─── */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
+  $('panel-' + name).classList.add('active');
+  if (name === 'historique') renderHistorique();
+  if (name === 'analyse') renderAnalyse();
+  if (name === 'params') loadParamsForm();
+}
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => switchTab(tab.dataset.tab);
+});
+
+/* ─── EXPORT / SAVE / RESTORE ─── */
+$('export-btn').onclick = () => {
+  const arr = pleinsVehicule();
+  if (!arr.length) { toast('Aucun plein à exporter.', 'info'); return; }
+  let csv = 'Date,Type,Litres,Prix (€),€/L,Km,Conso L/100\n';
+  arr.forEach((p, i) => {
+    const conso = computeConsoIdx(arr, i);
+    csv += `${p.date},${p.full ? 'Complet' : 'Appoint'},${p.litres},${p.prix},${p.litres>0?fmt2(p.prix/p.litres):''},${p.km},${conso?fmt1(conso):''}\n`;
+  });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })),
+    download: `essence-${new Date().toISOString().slice(0,10)}.csv`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Export CSV effectué.', 'info');
+};
+
+$('save-btn').onclick = async () => {
+  const settingsArr = await getAll('settings');
+  const data = { pleins, vehicules, settings: settingsArr, meta: { nextPleinId, nextVehicleId, activeVehicleId, date: new Date().toISOString() } };
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })),
+    download: `essence-backup-${new Date().toISOString().slice(0,10)}.json`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Sauvegarde effectuée.', 'success');
+};
+
+$('restore-btn').onclick = () => $('file-restore').click();
+$('file-restore').onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!confirm('Remplacer toutes les données par cette sauvegarde ?')) return;
+      await clearStore('pleins'); await clearStore('vehicules'); await clearStore('settings');
+      pleins = data.pleins || []; vehicules = data.vehicules || [];
+      const t = db.transaction(['pleins','vehicules','settings'], 'readwrite');
+      pleins.forEach(p => t.objectStore('pleins').put(p));
+      vehicules.forEach(v => t.objectStore('vehicules').put(v));
+      (data.settings || []).forEach(s => t.objectStore('settings').put(s));
+      await new Promise((res, rej) => { t.oncomplete = res; t.onerror = () => rej(t.error); });
+      if (data.meta) {
+        nextPleinId = data.meta.nextPleinId || nextPleinId;
+        nextVehicleId = data.meta.nextVehicleId || nextVehicleId;
+        activeVehicleId = data.meta.activeVehicleId || (vehicules[0]?.id ?? null);
       }
-    }
+      // Recharger settings
+      const settingsArr = await getAll('settings');
+      settings = {};
+      settingsArr.forEach(s => { settings[s.key] = s.value; });
+      renderVehicles(); loadParamsForm(); renderAll();
+      toast('Restauration réussie.', 'success');
+    } catch { toast('Fichier invalide.', 'error'); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+};
 
-    function init() {
-      loadSettings();
-      loadLogs();
-      
-      document.getElementById('capacity').value = capacity;
-      document.getElementById('threshold').value = thresholdPercent;
+/* ─── RENDER ALL ─── */
+function renderAll() {
+  renderKPIs();
+  if ($('panel-historique').classList.contains('active')) renderHistorique();
+  if ($('panel-analyse').classList.contains('active')) renderAnalyse();
+}
 
-      document.getElementById('capacity').addEventListener('change', function() {
-        capacity = parseInt(this.value) || 56;
-        saveSettings();
-        updateFullTankSuggestion();
-      });
-      document.getElementById('threshold').addEventListener('change', function() {
-        thresholdPercent = parseInt(this.value) || 80;
-        saveSettings();
-        updateFullTankSuggestion();
-      });
+/* ─── INIT ─── */
+async function init() {
+  applyTheme(localStorage.getItem(THEME_KEY) || 'auto');
+  await openDB();
 
-      document.getElementById('date').value = new Date().toISOString().split('T')[0];
-      
-      document.getElementById('litres').addEventListener('input', updateFullTankSuggestion);
-      updateFullTankSuggestion();
+  [pleins, vehicules] = await Promise.all([getAll('pleins'), getAll('vehicules')]);
+  const settingsArr = await getAll('settings');
+  settings = {};
+  settingsArr.forEach(s => { settings[s.key] = s.value; });
 
-      document.getElementById('fuel-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const date = document.getElementById('date').value;
-        const litres = parseFloat(document.getElementById('litres').value);
-        const prix = parseFloat(document.getElementById('prix').value);
-        const odometer = parseInt(document.getElementById('odometer').value);
-        const full = document.getElementById('full-tank-checkbox').checked;
+  nextPleinId   = Math.max(0, ...pleins.map(p => p.id)) + 1;
+  nextVehicleId = Math.max(0, ...vehicules.map(v => v.id)) + 1;
 
-        if (!date || isNaN(litres) || isNaN(prix) || isNaN(odometer) || litres <= 0 || prix <= 0 || odometer < 0) {
-          alert('Veuillez remplir tous les champs avec des valeurs valides.');
-          return;
-        }
+  // Véhicule par défaut
+  if (!vehicules.length) {
+    const v = { id: nextVehicleId++, nom: 'Mon véhicule', color: COLORS[0] };
+    vehicules.push(v);
+    await put('vehicules', v);
+  }
+  activeVehicleId = vehicules[0].id;
 
-        if (addEntry(date, litres, prix, odometer, full)) {
-          document.getElementById('date').value = new Date().toISOString().split('T')[0];
-          document.getElementById('litres').value = '';
-          document.getElementById('prix').value = '';
-          document.getElementById('odometer').value = '';
-          updateFullTankSuggestion();
-          document.getElementById('litres').focus();
-        }
-      });
+  renderColorPicker();
+  renderVehicles();
+  loadParamsForm();
+  resetForm();
+  renderAll();
 
-      document.getElementById('export-btn').addEventListener('click', exportCSV);
-      document.getElementById('clear-btn').addEventListener('click', clearAll);
-      renderTable();
-    }
+  const loader = $('loader');
+  loader.classList.add('hidden');
+  setTimeout(() => loader.remove(), 400);
+}
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-      });
-    }
-    init();
-  })();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+init().catch(err => {
+  console.error(err);
+  $('loader').innerHTML = '<div style="color:red;padding:20px;text-align:center">Erreur de chargement.</div>';
+});
+
+})();
 </script>
 </body>
 </html>
