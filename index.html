@@ -418,7 +418,10 @@ tbody td { padding: 8px 8px; font-size: .78rem; color: var(--text); vertical-ali
     </div>
     <div class="header-actions">
       <button class="btn btn-ghost btn-icon" id="theme-btn" title="Thème">☀️</button>
-      <button class="btn btn-ghost btn-sm" id="import-csv-btn" title="Importer CSV"><span>📥</span><span> Import</span></button>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Importer CSV">
+        <span>📥</span><span> Import</span>
+        <input type="file" id="file-import-csv" accept=".csv,.txt" style="display:none">
+      </label>
       <button class="btn btn-ghost btn-sm" id="export-btn"><span>📤</span><span> Export</span></button>
       <button class="btn btn-ghost btn-sm" id="save-btn"><span>💾</span><span> Save</span></button>
       <button class="btn btn-ghost btn-icon" id="restore-btn" title="Restaurer">📂</button>
@@ -572,7 +575,6 @@ tbody td { padding: 8px 8px; font-size: .78rem; color: var(--text); vertical-ali
 </div>
 
 <input type="file" id="file-restore" accept=".json" style="display:none">
-<input type="file" id="file-import-csv" accept=".csv,.txt" style="display:none">
 
 <script>
 (function () {
@@ -1135,7 +1137,6 @@ $('export-btn').onclick = () => {
 };
 
 /* ─── IMPORT CSV ─── */
-$('import-csv-btn').onclick = () => $('file-import-csv').click();
 
 $('file-import-csv').onchange = e => {
   const file = e.target.files[0]; if (!file) return;
@@ -1154,28 +1155,39 @@ $('file-import-csv').onchange = e => {
       }
 
       // Parsing — format : Date,Type,Litres,Prix (€),€/L,Km,Conso L/100
+      // On détecte les colonnes par leur position dans l'en-tête
+      // plutôt que par un index fixe (robuste aux variations)
+      const headerCols = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const iDate   = headerCols.findIndex(h => h.includes('date'));
+      const iType   = headerCols.findIndex(h => h.includes('type'));
+      const iLitres = headerCols.findIndex(h => h.includes('litre'));
+      const iPrix   = headerCols.findIndex(h => h.includes('prix'));
+      const iKm     = headerCols.findIndex(h => h === 'km' || h === 'km total' || h === 'kilom');
+
+      if (iDate === -1 || iLitres === -1 || iPrix === -1 || iKm === -1) {
+        toast('En-têtes CSV non reconnus.', 'error');
+        return;
+      }
+
       const newPleins = [];
       let skipped = 0;
       const existingKms = new Set(pleinsVehicule().map(p => p.km));
 
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',');
-        if (cols.length < 6) { skipped++; continue; }
+        if (cols.length < Math.max(iDate, iLitres, iPrix, iKm) + 1) { skipped++; continue; }
 
-        const date   = cols[0].trim();
-        const type   = cols[1].trim().toLowerCase();
-        const litres = parseFloat(cols[2].trim());
-        const prix   = parseFloat(cols[3].trim());
-        const km     = parseInt(cols[5].trim());
+        const date   = cols[iDate]  ?.trim() || '';
+        const type   = iType !== -1 ? (cols[iType]?.trim().toLowerCase() || '') : '';
+        const litres = parseFloat(cols[iLitres]?.trim().replace(',', '.'));
+        const prix   = parseFloat(cols[iPrix]  ?.trim().replace(',', '.'));
+        const km     = parseInt(cols[iKm]      ?.trim());
 
-        // Validation des valeurs
         if (!date || isNaN(litres) || isNaN(prix) || isNaN(km)) { skipped++; continue; }
         if (litres <= 0 || prix <= 0 || km < 0) { skipped++; continue; }
-
-        // Skip les doublons (même km déjà en base)
         if (existingKms.has(km)) { skipped++; continue; }
 
-        const full = type === 'complet';
+        const full = type.includes('complet');
         newPleins.push({ id: nextPleinId++, date, litres, prix, km, full, vehiculeId: activeVehicleId });
         existingKms.add(km);
       }
