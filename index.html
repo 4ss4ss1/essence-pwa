@@ -418,6 +418,7 @@ tbody td { padding: 8px 8px; font-size: .78rem; color: var(--text); vertical-ali
     </div>
     <div class="header-actions">
       <button class="btn btn-ghost btn-icon" id="theme-btn" title="Thème">☀️</button>
+      <button class="btn btn-ghost btn-sm" id="import-csv-btn" title="Importer CSV"><span>📥</span><span> Import</span></button>
       <button class="btn btn-ghost btn-sm" id="export-btn"><span>📤</span><span> Export</span></button>
       <button class="btn btn-ghost btn-sm" id="save-btn"><span>💾</span><span> Save</span></button>
       <button class="btn btn-ghost btn-icon" id="restore-btn" title="Restaurer">📂</button>
@@ -571,6 +572,7 @@ tbody td { padding: 8px 8px; font-size: .78rem; color: var(--text); vertical-ali
 </div>
 
 <input type="file" id="file-restore" accept=".json" style="display:none">
+<input type="file" id="file-import-csv" accept=".csv,.txt" style="display:none">
 
 <script>
 (function () {
@@ -1130,6 +1132,78 @@ $('export-btn').onclick = () => {
   });
   a.click(); URL.revokeObjectURL(a.href);
   toast('Export CSV effectué.', 'info');
+};
+
+/* ─── IMPORT CSV ─── */
+$('import-csv-btn').onclick = () => $('file-import-csv').click();
+
+$('file-import-csv').onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const text = ev.target.result;
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { toast('Fichier vide ou invalide.', 'error'); return; }
+
+      // Vérification de l'en-tête
+      const header = lines[0].toLowerCase();
+      if (!header.includes('date') || !header.includes('litres') || !header.includes('km')) {
+        toast('Format CSV non reconnu. Utilisez un export de cette app.', 'error');
+        return;
+      }
+
+      // Parsing — format : Date,Type,Litres,Prix (€),€/L,Km,Conso L/100
+      const newPleins = [];
+      let skipped = 0;
+      const existingKms = new Set(pleinsVehicule().map(p => p.km));
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 6) { skipped++; continue; }
+
+        const date   = cols[0].trim();
+        const type   = cols[1].trim().toLowerCase();
+        const litres = parseFloat(cols[2].trim());
+        const prix   = parseFloat(cols[3].trim());
+        const km     = parseInt(cols[5].trim());
+
+        // Validation des valeurs
+        if (!date || isNaN(litres) || isNaN(prix) || isNaN(km)) { skipped++; continue; }
+        if (litres <= 0 || prix <= 0 || km < 0) { skipped++; continue; }
+
+        // Skip les doublons (même km déjà en base)
+        if (existingKms.has(km)) { skipped++; continue; }
+
+        const full = type === 'complet';
+        newPleins.push({ id: nextPleinId++, date, litres, prix, km, full, vehiculeId: activeVehicleId });
+        existingKms.add(km);
+      }
+
+      if (!newPleins.length) {
+        toast(skipped > 0 ? `Aucune ligne importée (${skipped} ignorée(s) — doublons ou invalides).` : 'Aucune donnée valide dans le fichier.', 'error');
+        e.target.value = '';
+        return;
+      }
+
+      // Transaction groupée
+      const t = db.transaction('pleins', 'readwrite');
+      const store = t.objectStore('pleins');
+      newPleins.forEach(p => { pleins.push(p); store.put(p); });
+      await new Promise((res, rej) => { t.oncomplete = res; t.onerror = () => rej(t.error); });
+
+      renderAll();
+      const msg = skipped > 0
+        ? `✅ ${newPleins.length} plein(s) importé(s) · ${skipped} ignoré(s) (doublons/invalides)`
+        : `✅ ${newPleins.length} plein(s) importé(s)`;
+      toast(msg, 'success');
+    } catch (err) {
+      console.error(err);
+      toast('Erreur lors de la lecture du fichier.', 'error');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
 };
 
 $('save-btn').onclick = async () => {
