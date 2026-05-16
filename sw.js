@@ -1,10 +1,9 @@
-const CACHE = 'essence-v2'; // ← incrémente à chaque déploiement
+const CACHE = 'app-v3';
+const ASSETS = ['/index.html', '/manifest.json', '/icon-192.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(['/', '/index.html']))
-  );
-  self.skipWaiting(); // force l'activation immédiate
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
@@ -13,11 +12,20 @@ self.addEventListener('activate', e => {
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     )
   );
-  self.clients.claim(); // prend le contrôle de tous les onglets ouverts
+  self.clients.claim();
 });
 
+// Network-first : on essaie le réseau, on tombe sur le cache seulement si offline
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request)
+      .then(res => {
+        // Met à jour le cache avec la version fraîche
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
